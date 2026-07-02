@@ -1,40 +1,50 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState } from 'react';
+import { StatusBar, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Provider, useDispatch } from 'react-redux';
+import { store } from './src/store';
+import { RootNavigator } from './src/navigation/RootNavigator';
+import { loginSuccess, restoreComplete } from './src/store/slices/authSlice';
+import { getAuthUser } from './src/utils/authStorage';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+const AppContent = () => {
+  const dispatch = useDispatch();
+  const [isRestoring, setIsRestoring] = useState(true);
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  useEffect(() => {
+    const restoreAuth = async () => {
+      try {
+        const user = await getAuthUser();
 
+        if (user) {
+          dispatch(loginSuccess(user));
+        }
+      } finally {
+        dispatch(restoreComplete());
+        setIsRestoring(false);
+      }
+    };
+
+    restoreAuth();
+  }, [dispatch]);
+
+  if (isRestoring) {
+    return null;
+  }
+
+  return <RootNavigator />;
+};
+
+const App = () => {
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <GestureHandlerRootView style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        <AppContent />
+      </GestureHandlerRootView>
+    </Provider>
   );
-}
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
