@@ -1,16 +1,16 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
-  Heart,
+  Bell,
   MessageCircle,
   User,
   Compass,
-  Map as MapIcon,
+  Heart,
 } from 'lucide-react-native';
 
 import { DiscoverScreen } from '../screens/DiscoverScreen';
-import { MapScreen } from '../screens/MapScreen';
+import { ActivityScreen } from '../screens/ActivityScreen';
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -29,8 +29,8 @@ const TabIcon = ({
   size: number;
   focused: boolean;
 }) => (
-  <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-    <Icon size={size - 2} color={color} strokeWidth={focused ? 2.5 : 2} />
+  <View style={styles.iconWrap}>
+    <Icon size={size} color={color} strokeWidth={focused ? 2.5 : 2} />
   </View>
 );
 
@@ -39,8 +39,8 @@ export const MainNavigator = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarActiveTintColor: '#FF2D55',
+        tabBarInactiveTintColor: '#666666',
         tabBarLabelStyle: styles.tabLabel,
         tabBarStyle: styles.tabBar,
       }}
@@ -55,16 +55,16 @@ export const MainNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Map"
-        component={MapScreen}
+        name="Activity"
+        component={ActivityScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon Icon={MapIcon} color={color} size={size} focused={focused} />
+            <TabIcon Icon={Bell} color={color} size={size} focused={focused} />
           ),
         }}
       />
       <Tab.Screen
-        name="Likes"
+        name="Matches"
         component={MatchesScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
@@ -96,27 +96,23 @@ export const MainNavigator = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    borderTopWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: '#FFE8F0',
     height: Platform.OS === 'ios' ? 88 : 68,
     paddingBottom: Platform.OS === 'ios' ? 28 : 10,
     paddingTop: 8,
-    backgroundColor: theme.colors.white,
-    ...theme.shadows.md,
+    backgroundColor: '#FFFFFF',
+    elevation: 0,
+    shadowOpacity: 0,
   },
   tabLabel: {
     fontFamily: theme.fonts.medium,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 4,
   },
   iconWrap: {
-    width: 40,
-    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-  },
-  iconWrapActive: {
-    backgroundColor: theme.colors.primaryMuted,
   },
 });

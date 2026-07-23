@@ -11,15 +11,17 @@ import {
   Platform,
   StatusBar,
   ScrollView,
+  Dimensions,
 } from 'react-native';
-import Video from 'react-native-video';
-import { Phone, ArrowRight, Shield, Heart, Sparkles, CheckCircle2 } from 'lucide-react-native';
+import { Phone, ArrowRight, Shield, Heart, Crown, CheckCircle2, ChevronDown } from 'lucide-react-native';
 import { theme } from '../theme';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const TRUST_BADGES = [
   { icon: Shield, label: 'Verified Profiles' },
   { icon: Heart, label: '1M+ Matches' },
-  { icon: Sparkles, label: 'Premium Experience' },
+  { icon: Crown, label: 'Premium Experience' },
 ];
 
 const formatPhoneDisplay = (digits: string) => {
@@ -44,22 +46,17 @@ export const LoginScreen = ({ navigation }: any) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <Video
-        source={require('../assets/videos/lifepartner.mp4')}
-        style={styles.backgroundVideo}
-        muted
-        repeat
+      {/* Background Image */}
+      <Image
+        source={require('../assets/images/wedding.png')}
+        style={styles.backgroundImage}
         resizeMode="cover"
-        rate={1.0}
-        paused={false}
-        playInBackground={false}
-        playWhenInactive={false}
-        shutterColor="transparent"
       />
 
-      {/* Fallback gradient when video is loading or unavailable */}
-      <View style={styles.fallbackBackground} />
+      {/* Dark maroon overlay */}
       <View style={styles.overlay} />
+
+      {/* Bottom gradient fade */}
       <View style={styles.gradientFade} />
 
       <SafeAreaView style={styles.safeArea}>
@@ -67,30 +64,35 @@ export const LoginScreen = ({ navigation }: any) => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.keyboardView}
         >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
-            <View style={styles.hero}>
-              <View style={styles.logoBadge}>
-                <Heart size={18} color={theme.colors.white} fill={theme.colors.secondary} />
-              </View>
-              <Text style={styles.logo}>LifePartner</Text>
-              <Text style={styles.subtitle}>Where meaningful connections begin</Text>
-
-              <View style={styles.badgesRow}>
-                {TRUST_BADGES.map(({ icon: Icon, label }) => (
-                  <View key={label} style={styles.trustBadge}>
-                    <Icon size={14} color={theme.colors.accent} />
-                    <Text style={styles.trustText}>{label}</Text>
-                  </View>
-                ))}
-              </View>
+          {/* Hero Section - at the top */}
+          <View style={styles.hero}>
+            <View style={styles.logoBadge}>
+              <Heart size={20} color="#FFFFFF" fill="#FF2D55" />
             </View>
+            <Text style={styles.logo}>LifePartner</Text>
+            <Text style={styles.subtitle}>Where meaningful connections begin</Text>
 
-            <View style={styles.formCard}>
+            <View style={styles.badgesRow}>
+              {TRUST_BADGES.map(({ icon: Icon, label }) => (
+                <View key={label} style={styles.trustBadge}>
+                  <Icon size={24} color="#FFFFFF" />
+                  <Text style={styles.trustText}>{label.replace(' ', '\n')}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Bottom Sheet Form Panel */}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.bottomSheet}
+          >
+            <ScrollView
+              contentContainerStyle={styles.sheetScroll}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
               <Text style={styles.formTitle}>Get Started</Text>
               <Text style={styles.formSubtitle}>Enter your mobile number to continue</Text>
 
@@ -102,30 +104,30 @@ export const LoginScreen = ({ navigation }: any) => {
                   isValid && styles.inputContainerValid,
                 ]}
               >
-                <Phone
-                  size={20}
-                  color={isValid ? theme.colors.success : 'rgba(255,255,255,0.85)'}
-                />
-                <Text style={styles.prefix}>+91</Text>
+                {/* +91 Dropdown prefix */}
+                <View style={styles.prefixBox}>
+                  <Text style={styles.prefix}>+91</Text>
+                  <ChevronDown size={14} color="#FFFFFF" />
+                </View>
                 <View style={styles.inputDivider} />
                 <TextInput
                   style={styles.input}
-                  placeholder="9876543210"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  placeholder="Enter mobile number"
+                  placeholderTextColor="rgba(255,255,255,0.6)"
                   keyboardType="number-pad"
                   value={phone}
                   onChangeText={handlePhoneChange}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                   maxLength={10}
-                  selectionColor={theme.colors.secondary}
+                  selectionColor="#FF2D55"
                   underlineColorAndroid="transparent"
                   autoComplete="tel"
                   textContentType="telephoneNumber"
                   returnKeyType="done"
                 />
                 {isValid ? (
-                  <CheckCircle2 size={22} color={theme.colors.success} />
+                  <CheckCircle2 size={20} color="#43A047" />
                 ) : hasInput ? (
                   <Text style={styles.digitCount}>{phone.length}/10</Text>
                 ) : null}
@@ -140,8 +142,9 @@ export const LoginScreen = ({ navigation }: any) => {
                 <Text style={styles.validText}>+91 {formatPhoneDisplay(phone)}</Text>
               )}
 
+              {/* Continue Button */}
               <TouchableOpacity
-                style={[styles.button, isValid ? styles.buttonEnabled : styles.buttonDisabled]}
+                style={[styles.button, !isValid && styles.buttonDisabled]}
                 onPress={() => navigation.navigate('OTP', { phone })}
                 activeOpacity={0.85}
                 disabled={!isValid}
@@ -151,16 +154,18 @@ export const LoginScreen = ({ navigation }: any) => {
                 </Text>
                 <ArrowRight
                   size={20}
-                  color={isValid ? theme.colors.white : 'rgba(255,255,255,0.5)'}
+                  color={isValid ? '#FFFFFF' : 'rgba(255,255,255,0.5)'}
                 />
               </TouchableOpacity>
 
+              {/* OR Divider */}
               <View style={styles.dividerContainer}>
                 <View style={styles.divider} />
                 <Text style={styles.dividerText}>OR</Text>
                 <View style={styles.divider} />
               </View>
 
+              {/* Google Button */}
               <TouchableOpacity style={styles.socialButton} activeOpacity={0.85}>
                 <Image
                   source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png' }}
@@ -168,15 +173,15 @@ export const LoginScreen = ({ navigation }: any) => {
                 />
                 <Text style={styles.socialButtonText}>Continue with Google</Text>
               </TouchableOpacity>
-            </View>
 
-            <Text style={styles.footerText}>
-              By continuing, you agree to our
-              <Text style={styles.link}> Terms </Text>
-              and
-              <Text style={styles.link}> Privacy Policy</Text>
-            </Text>
-          </ScrollView>
+              <Text style={styles.footerText}>
+                By continuing, you agree to our
+                <Text style={styles.link}> Terms </Text>
+                and
+                <Text style={styles.link}> Privacy Policy</Text>
+              </Text>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -186,214 +191,235 @@ export const LoginScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A0A1F',
+    backgroundColor: '#3D0B0B',
   },
-  backgroundVideo: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  fallbackBackground: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#2D1B3D',
+  backgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(60,5,15,0.50)',
   },
   gradientFade: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: '70%',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    height: '20%',
+    backgroundColor: 'rgba(40,0,10,0.30)',
   },
   safeArea: {
     flex: 1,
   },
   keyboardView: {
     flex: 1,
+    justifyContent: 'space-between',
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'flex-end',
-    paddingBottom: Platform.OS === 'android' ? 24 : 16,
+
+  // ── Hero ──────────────────────────────────────────
+  hero: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
     paddingTop: 20,
   },
-  hero: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
   logoBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(233,30,99,0.35)',
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#FF2D55',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
+    shadowColor: '#FF2D55',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 14,
+    elevation: 10,
   },
   logo: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 40,
-    fontWeight: '900',
-    color: theme.colors.white,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontSize: 42,
+    fontWeight: '700',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   subtitle: {
     fontFamily: theme.fonts.regular,
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
     marginTop: 6,
     textAlign: 'center',
   },
   badgesRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'center',
-    marginTop: 18,
-    gap: 8,
+    alignItems: 'center',
+    marginTop: 24,
+    gap: 12,
   },
   trustBadge: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(120, 20, 20, 0.4)',
+    width: 90,
+    height: 100,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    gap: 5,
+    borderColor: 'rgba(255,255,255,0.15)',
+    gap: 12,
   },
   trustText: {
     fontFamily: theme.fonts.medium,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '600',
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 16,
   },
-  formCard: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 28,
-    padding: 24,
+
+  // ── Bottom Sheet Panel ────────────────────────────
+  bottomSheet: {
+    backgroundColor: 'rgba(90, 50, 50, 0.95)',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
+    borderBottomWidth: 0,
+  },
+  sheetScroll: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: Platform.OS === 'android' ? 32 : 24,
   },
   formTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 22,
-    fontWeight: '800',
-    color: theme.colors.white,
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 6,
   },
   formSubtitle: {
     fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.65)',
-    marginTop: 4,
-    marginBottom: 20,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 28,
   },
   label: {
     fontFamily: theme.fonts.medium,
     fontSize: 13,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
+    color: '#FFFFFF',
     marginBottom: 8,
   },
+
+  // ── Input ─────────────────────────────────────────
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
     paddingHorizontal: 16,
     height: 56,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
   inputContainerFocused: {
-    borderColor: theme.colors.secondary,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderColor: '#FFFFFF',
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   inputContainerValid: {
-    borderColor: theme.colors.success,
-    backgroundColor: 'rgba(67,160,71,0.12)',
+    borderColor: '#43A047',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  prefixBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingRight: 4,
   },
   prefix: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 17,
-    color: theme.colors.white,
-    marginLeft: 8,
+    fontFamily: theme.fonts.medium,
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   inputDivider: {
     width: 1,
     height: 24,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     marginHorizontal: 12,
   },
   input: {
     flex: 1,
-    fontFamily: theme.fonts.bold,
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.white,
+    fontFamily: theme.fonts.regular,
+    fontSize: 16,
+    color: '#FFFFFF',
     paddingVertical: 0,
-    letterSpacing: 1,
     ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
   },
   digitCount: {
     fontFamily: theme.fonts.medium,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.55)',
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
     fontWeight: '600',
-    minWidth: 36,
+    minWidth: 34,
     textAlign: 'right',
   },
   helperText: {
     fontFamily: theme.fonts.regular,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.55)',
-    marginTop: 8,
+    color: '#FF8888',
+    marginTop: 6,
     marginLeft: 4,
   },
   validText: {
     fontFamily: theme.fonts.medium,
-    fontSize: 13,
-    color: theme.colors.success,
-    marginTop: 8,
+    fontSize: 12,
+    color: '#43A047',
+    marginTop: 6,
     marginLeft: 4,
     fontWeight: '600',
   },
+
+  // ── Button ────────────────────────────────────────
   button: {
     height: 56,
-    borderRadius: 16,
+    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    gap: 10,
-  },
-  buttonEnabled: {
-    backgroundColor: theme.colors.secondary,
-    ...theme.shadows.lg,
+    marginTop: 24,
+    gap: 8,
+    backgroundColor: '#E82B67',
   },
   buttonDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(232, 43, 103, 0.5)',
   },
   buttonText: {
     fontFamily: theme.fonts.bold,
-    color: theme.colors.white,
-    fontSize: 17,
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '700',
   },
   buttonTextDisabled: {
-    color: 'rgba(255,255,255,0.45)',
+    color: 'rgba(255,255,255,0.7)',
   },
+
+  // ── OR Divider ────────────────────────────────────
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 24,
   },
   divider: {
     flex: 1,
@@ -403,19 +429,21 @@ const styles = StyleSheet.create({
   dividerText: {
     fontFamily: theme.fonts.medium,
     marginHorizontal: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
+
+  // ── Google Button ─────────────────────────────────
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 52,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.22)',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'transparent',
     gap: 12,
   },
   socialIcon: {
@@ -424,22 +452,25 @@ const styles = StyleSheet.create({
   },
   socialButtonText: {
     fontFamily: theme.fonts.medium,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.white,
+    color: '#FFFFFF',
   },
+
+  // ── Footer ────────────────────────────────────────
   footerText: {
     fontFamily: theme.fonts.regular,
     textAlign: 'center',
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.55)',
-    lineHeight: 17,
-    marginTop: 18,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 18,
+    marginTop: 32,
     paddingHorizontal: 10,
+    paddingBottom: 4,
   },
   link: {
     fontFamily: theme.fonts.medium,
-    color: theme.colors.secondary,
-    fontWeight: '700',
+    color: '#E82B67',
+    fontWeight: '600',
   },
 });

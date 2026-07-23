@@ -12,8 +12,9 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { Send, Smile, Phone, MoreVertical, ChevronLeft } from 'lucide-react-native';
+import { Send, Smile, Phone, MoreVertical, ChevronLeft, Crown } from 'lucide-react-native';
 import { theme } from '../theme';
+import { useAppSelector } from '../store/hooks';
 
 interface Message {
   id: string;
@@ -32,18 +33,26 @@ const INITIAL_MESSAGES: Message[] = [
 export const ChatScreen = () => {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
+  const isPro = useAppSelector(state => state.subscription.isPro);
 
   const validateMessage = (text: string) => {
     const phoneRegex = /\b\d{10}\b/;
     const numericDensity = (text.match(/\d/g) || []).length / text.length;
 
-    if (phoneRegex.test(text)) {
-      Alert.alert('Security Notice', 'Sharing mobile numbers is not allowed for your security.');
+    if (!isPro && phoneRegex.test(text)) {
+      Alert.alert(
+        '🔒 Pro Feature',
+        'Sharing mobile numbers is a Pro feature. Upgrade to LifePartner Pro for ₹250/month to share your number directly in chat.',
+        [
+          { text: 'Not Now', style: 'cancel' },
+          { text: 'Upgrade to Pro', style: 'default' },
+        ],
+      );
       return false;
     }
 
-    if (numericDensity > 0.6 && text.length > 5) {
-      Alert.alert('Security Notice', 'Sending purely numeric messages is restricted.');
+    if (!isPro && numericDensity > 0.6 && text.length > 5) {
+      Alert.alert('Security Notice', 'Sending purely numeric messages is restricted for free users.');
       return false;
     }
 
@@ -64,6 +73,7 @@ export const ChatScreen = () => {
     setMessages(prev => [...prev, newMessage]);
     setInputText('');
   };
+
 
   const renderMessage = ({ item }: { item: Message }) => {
     if (item.id === '0' || (item.text === 'Today' && !item.timestamp)) {
@@ -128,6 +138,15 @@ export const ChatScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {!isPro && (
+        <View style={styles.proHint}>
+          <Crown size={13} color="#B8860B" />
+          <Text style={styles.proHintText}>
+            Upgrade to Pro to share your phone number in chat
+          </Text>
+        </View>
+      )}
 
       <FlatList
         data={messages}
@@ -339,5 +358,21 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.4,
+  },
+  proHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,215,0,0.10)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,215,0,0.25)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  proHintText: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: '#B8860B',
+    flex: 1,
   },
 });

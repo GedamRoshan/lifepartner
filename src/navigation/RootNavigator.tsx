@@ -6,6 +6,7 @@ import { useAppSelector } from '../store/hooks';
 import { LoginScreen } from '../screens/LoginScreen';
 import { OTPScreen } from '../screens/OTPScreen';
 import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
+import { UserDetailsScreen } from '../screens/UserDetailsScreen';
 import { MainNavigator } from './MainNavigator';
 
 const Stack = createStackNavigator();
@@ -17,7 +18,10 @@ export const RootNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'none' }}>
         {isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
+          <>
+            <Stack.Screen name="Main" component={MainNavigator} />
+            <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />

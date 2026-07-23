@@ -2,289 +2,281 @@ import React, { useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Text,
+  Image,
+  FlatList,
+  Dimensions,
+  ActivityIndicator,
+  Animated,
 } from 'react-native';
-import Swiper from 'react-native-deck-swiper';
-import { Heart, X, Filter, Star, RotateCcw } from 'lucide-react-native';
+import { Filter, Shield, ChevronUp } from 'lucide-react-native';
 import { ProfileCard } from '../components/ProfileCard';
 import { MOCK_PROFILES } from '../utils/mockData';
-import { theme } from '../theme';
 import { useAppDispatch } from '../store/hooks';
 import { likeProfile, dislikeProfile } from '../store/slices/profileSlice';
+import { useNavigation } from '@react-navigation/native';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const DiscoverScreen = () => {
-  const swiperRef = useRef<Swiper<any>>(null);
-  const [cardIndex, setCardIndex] = useState(0);
-  const [allSwiped, setAllSwiped] = useState(false);
+  const flatListRef = useRef<FlatList<any>>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [profiles, setProfiles] = useState(MOCK_PROFILES);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasSwiped, setHasSwiped] = useState(false);
+  const bounceAnim = useRef(new Animated.Value(0)).current;
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<any>();
 
-  const remaining = MOCK_PROFILES.length - cardIndex;
-
-  const handleOnSwipedRight = (index: number) => {
-    const profile = MOCK_PROFILES[index];
-    if (profile) {
-      dispatch(likeProfile(profile.id));
+  React.useEffect(() => {
+    if (!hasSwiped) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, {
+            toValue: -10,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(bounceAnim, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     }
-    setCardIndex(index + 1);
+  }, [hasSwiped, bounceAnim]);
+
+  const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setCurrentIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  const fetchMoreProfiles = () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    
+    // Simulate a network delay of 1.5 seconds
+    setTimeout(() => {
+      // Create new mock profiles with unique IDs
+      const newProfiles = MOCK_PROFILES.map(p => ({
+        ...p,
+        id: `${p.id}-page${page}`,
+      }));
+      setProfiles(prev => [...prev, ...newProfiles]);
+      setPage(prevPage => prevPage + 1);
+      setIsLoadingMore(false);
+    }, 1500);
   };
 
-  const handleOnSwipedLeft = (index: number) => {
-    const profile = MOCK_PROFILES[index];
+  const handleAction = (type: 'like' | 'dislike') => {
+    const profile = profiles[currentIndex];
     if (profile) {
-      dispatch(dislikeProfile(profile.id));
+      if (type === 'like') dispatch(likeProfile(profile.id));
+      if (type === 'dislike') dispatch(dislikeProfile(profile.id));
     }
-    setCardIndex(index + 1);
+    
+    if (!hasSwiped) setHasSwiped(true);
+    
+    if (currentIndex < profiles.length - 1) {
+      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
+    }
   };
 
   const handleReset = () => {
-    setCardIndex(0);
-    setAllSwiped(false);
+    flatListRef.current?.scrollToIndex({ index: 0, animated: true });
+    setCurrentIndex(0);
+    setProfiles(MOCK_PROFILES);
+    setPage(1);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Discover</Text>
-          <Text style={styles.subGreeting}>
-            {allSwiped ? 'No more profiles' : `${remaining} profiles nearby`}
+          <Text style={styles.logoText}>
+            Life<Text style={styles.logoTextHighlight}>Partner</Text>
           </Text>
+          <Text style={styles.subGreeting}>Find meaningful connections 🌷</Text>
         </View>
         <TouchableOpacity style={styles.filterButton} activeOpacity={0.8}>
-          <Filter size={22} color={theme.colors.primary} />
+          <Filter size={20} color="#FF2D55" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.swiperContainer}>
-        {allSwiped ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIcon}>
-              <Star size={36} color={theme.colors.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>You're all caught up!</Text>
-            <Text style={styles.emptySubtitle}>
-              Check back later for new profiles in your area
-            </Text>
-            <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-              <RotateCcw size={18} color={theme.colors.white} />
-              <Text style={styles.resetText}>Start Over</Text>
-            </TouchableOpacity>
+      <View style={styles.badgesRow}>
+        <View style={styles.verifiedProfilesBadge}>
+          <Shield size={12} color="#FF2D55" fill="#FF2D55" />
+          <Text style={styles.verifiedProfilesText}>Verified Profiles</Text>
+        </View>
+        <View style={styles.avatarsBadge}>
+          <View style={styles.avatarsGroup}>
+            <Image source={{uri: 'https://i.pravatar.cc/100?img=1'}} style={[styles.miniAvatar, { zIndex: 3 }]} />
+            <Image source={{uri: 'https://i.pravatar.cc/100?img=2'}} style={[styles.miniAvatar, { left: -12, zIndex: 2 }]} />
+            <Image source={{uri: 'https://i.pravatar.cc/100?img=3'}} style={[styles.miniAvatar, { left: -24, zIndex: 1 }]} />
           </View>
-        ) : (
-          <Swiper
-            ref={swiperRef}
-            cards={MOCK_PROFILES}
-            renderCard={card => (card ? <ProfileCard profile={card} /> : null)}
-            onSwipedRight={handleOnSwipedRight}
-            onSwipedLeft={handleOnSwipedLeft}
-            onSwipedAll={() => setAllSwiped(true)}
-            cardIndex={cardIndex}
-            backgroundColor="transparent"
-            stackSize={3}
-            stackSeparation={12}
-            animateCardOpacity
-            disableTopSwipe
-            disableBottomSwipe
-            overlayLabels={{
-              left: {
-                title: 'PASS',
-                style: {
-                  label: {
-                    backgroundColor: theme.colors.error,
-                    borderColor: theme.colors.error,
-                    color: 'white',
-                    borderWidth: 2,
-                    fontSize: 18,
-                    fontWeight: '800',
-                    borderRadius: 8,
-                    padding: 8,
-                  },
-                  wrapper: {
-                    flexDirection: 'column',
-                    alignItems: 'flex-end',
-                    justifyContent: 'flex-start',
-                    marginTop: 40,
-                    marginLeft: -20,
-                  },
-                },
-              },
-              right: {
-                title: 'LIKE',
-                style: {
-                  label: {
-                    backgroundColor: theme.colors.success,
-                    borderColor: theme.colors.success,
-                    color: 'white',
-                    borderWidth: 2,
-                    fontSize: 18,
-                    fontWeight: '800',
-                    borderRadius: 8,
-                    padding: 8,
-                  },
-                  wrapper: {
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    justifyContent: 'flex-start',
-                    marginTop: 40,
-                    marginLeft: 20,
-                  },
-                },
-              },
-            }}
-          />
-        )}
+          <Text style={[styles.plus12Text, { marginLeft: -16 }]}>+12</Text>
+        </View>
       </View>
 
-      {!allSwiped && (
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.dislikeButton]}
-            onPress={() => swiperRef.current?.swipeLeft()}
-            activeOpacity={0.85}
-          >
-            <X size={30} color={theme.colors.error} strokeWidth={2.5} />
-          </TouchableOpacity>
+      <View style={styles.listContainer}>
+        <FlatList
+          ref={flatListRef}
+          data={profiles}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <View style={styles.cardWrapper}>
+              <ProfileCard 
+                profile={item} 
+                onAction={handleAction} 
+                onPressProfile={() => navigation.navigate('UserDetails', { profile: item })}
+              />
+            </View>
+          )}
+          showsVerticalScrollIndicator={false}
+          snapToInterval={SCREEN_HEIGHT * 0.72 + 20} 
+          decelerationRate="fast"
+          onScrollBeginDrag={() => {
+            if (!hasSwiped) setHasSwiped(true);
+          }}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          contentContainerStyle={styles.flatListContent}
+          onEndReached={fetchMoreProfiles}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={() => {
+            if (!isLoadingMore) return null;
+            return (
+              <View style={{ padding: 20 }}>
+                <ActivityIndicator size="large" color="#FF2D55" />
+              </View>
+            );
+          }}
+        />
+      </View>
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.superLikeButton]}
-            onPress={() => swiperRef.current?.swipeRight()}
-            activeOpacity={0.85}
-          >
-            <Star size={26} color={theme.colors.accent} fill={theme.colors.accent} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.likeButton]}
-            onPress={() => swiperRef.current?.swipeRight()}
-            activeOpacity={0.85}
-          >
-            <Heart size={30} color={theme.colors.white} fill={theme.colors.white} />
-          </TouchableOpacity>
-        </View>
+      {!hasSwiped && (
+        <Animated.View style={[styles.swipeUpWrapper, { transform: [{ translateY: bounceAnim }] }]}>
+          <ChevronUp size={24} color="#FF6B9D" strokeWidth={3} />
+          <Text style={styles.swipeUpText}>Swipe up to view more profiles</Text>
+        </Animated.View>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundSoft,
+    backgroundColor: '#FAFAFA',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 12,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  greeting: {
-    fontFamily: theme.fonts.bold,
+  logoText: {
     fontSize: 28,
     fontWeight: '800',
-    color: theme.colors.text,
+    color: '#1A1A1A',
     letterSpacing: -0.5,
   },
+  logoTextHighlight: {
+    color: '#FF2D55',
+  },
   subGreeting: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#666666',
     marginTop: 2,
   },
   filterButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: theme.colors.white,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    ...theme.shadows.sm,
+    shadowColor: '#FF2D55',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#FFE8F0',
   },
-  swiperContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footer: {
+  badgesRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 24,
-    gap: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
   },
-  actionButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
+  verifiedProfilesBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    ...theme.shadows.md,
+    backgroundColor: '#FFE8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
   },
-  dislikeButton: {
-    backgroundColor: theme.colors.white,
+  verifiedProfilesText: {
+    fontSize: 12,
+    color: '#FF2D55',
+    fontWeight: '600',
+  },
+  avatarsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFE8F0',
+    paddingVertical: 4,
+    paddingLeft: 4,
+    paddingRight: 12,
+    borderRadius: 24,
+  },
+  avatarsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  miniAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 2,
-    borderColor: theme.colors.error + '25',
+    borderColor: '#FFFFFF',
   },
-  superLikeButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: theme.colors.white,
-    borderWidth: 2,
-    borderColor: theme.colors.accent + '40',
+  plus12Text: {
+    fontSize: 12,
+    color: '#FF2D55',
+    fontWeight: '700',
   },
-  likeButton: {
-    backgroundColor: theme.colors.secondary,
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    ...theme.shadows.lg,
+  listContainer: {
+    flex: 1,
+    marginTop: -10, 
   },
-  emptyState: {
+  flatListContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 150, 
+  },
+  cardWrapper: {
     alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: theme.colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
   },
-  emptyTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 22,
-    fontWeight: '800',
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 21,
-  },
-  resetButton: {
-    flexDirection: 'row',
+  swipeUpWrapper: {
     alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 16,
-    marginTop: 24,
-    gap: 8,
-    ...theme.shadows.md,
+    marginBottom: 20,
   },
-  resetText: {
-    fontFamily: theme.fonts.bold,
-    color: theme.colors.white,
-    fontSize: 15,
-    fontWeight: '700',
+  swipeUpText: {
+    fontSize: 13,
+    color: '#666666',
+    fontWeight: '500',
+    marginTop: 4,
   },
 });

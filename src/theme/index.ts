@@ -2,19 +2,29 @@ import { Platform } from 'react-native';
 
 const fonts = {
   regular: Platform.select({
-    ios: 'System',
-    android: 'sans-serif',
-    default: 'System',
+    ios: 'Poppins-Regular',
+    android: 'Poppins-Regular',
+    default: 'Poppins-Regular',
   }),
   medium: Platform.select({
-    ios: 'System',
-    android: 'sans-serif-medium',
-    default: 'System',
+    ios: 'Poppins-Medium',
+    android: 'Poppins-Medium',
+    default: 'Poppins-Medium',
+  }),
+  semiBold: Platform.select({
+    ios: 'Poppins-SemiBold',
+    android: 'Poppins-SemiBold',
+    default: 'Poppins-SemiBold',
   }),
   bold: Platform.select({
-    ios: 'System',
-    android: 'sans-serif',
-    default: 'System',
+    ios: 'Poppins-Bold',
+    android: 'Poppins-Bold',
+    default: 'Poppins-Bold',
+  }),
+  extraBold: Platform.select({
+    ios: 'Poppins-ExtraBold',
+    android: 'Poppins-ExtraBold',
+    default: 'Poppins-ExtraBold',
   }),
 };
 
@@ -109,9 +119,9 @@ export const theme = {
   },
   typography: {
     h1: {
-      fontFamily: fonts.bold,
+      fontFamily: fonts.extraBold,
       fontSize: 32,
-      fontWeight: '700' as const,
+      fontWeight: '800' as const,
     },
     h2: {
       fontFamily: fonts.bold,
@@ -119,7 +129,7 @@ export const theme = {
       fontWeight: '700' as const,
     },
     h3: {
-      fontFamily: fonts.medium,
+      fontFamily: fonts.semiBold,
       fontSize: 20,
       fontWeight: '600' as const,
     },

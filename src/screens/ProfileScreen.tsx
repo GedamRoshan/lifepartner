@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
+  Image,
 } from 'react-native';
 import {
   LogOut,
@@ -17,6 +18,7 @@ import {
   Shield,
   Settings,
   ChevronRight,
+  Crown,
 } from 'lucide-react-native';
 import { theme } from '../theme';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -45,6 +47,7 @@ export const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(state => state.auth.user);
   const likedCount = useAppSelector(state => state.profiles.likedProfiles.length);
+  const isPro = useAppSelector(state => state.subscription.isPro);
 
   const handleLogout = async () => {
     await clearAuthUser();
@@ -64,7 +67,11 @@ export const ProfileScreen = () => {
         <View style={styles.profileCard}>
           <View style={styles.avatarRing}>
             <View style={styles.avatar}>
-              <User size={44} color={theme.colors.primary} />
+              {user?.photos && user.photos.length > 0 ? (
+                <Image source={{ uri: user.photos[0] }} style={styles.avatarImage} />
+              ) : (
+                <User size={44} color={theme.colors.primary} />
+              )}
             </View>
           </View>
           <Text style={styles.name}>{user?.name || 'Your Profile'}</Text>
@@ -120,6 +127,28 @@ export const ProfileScreen = () => {
           </View>
         </View>
 
+        {/* Subscription Status Card */}
+        <View style={styles.subCard}>
+          <View style={[styles.subIconWrap, isPro ? styles.subIconPro : styles.subIconFree]}>
+            <Crown size={22} color={isPro ? '#FFD700' : theme.colors.textMuted} fill={isPro ? '#FFD700' : 'none'} />
+          </View>
+          <View style={styles.subInfo}>
+            <Text style={styles.subTitle}>
+              {isPro ? 'LifePartner Pro Active' : 'Free Plan'}
+            </Text>
+            <Text style={styles.subDesc}>
+              {isPro
+                ? 'All features unlocked · ₹250/month'
+                : 'Upgrade to Pro for ₹250/month'}
+            </Text>
+          </View>
+          {!isPro && (
+            <View style={styles.upgradeBadge}>
+              <Text style={styles.upgradeBadgeText}>Upgrade</Text>
+            </View>
+          )}
+        </View>
+
         <View style={styles.menuSection}>
           <MenuItem icon={Shield} label="Privacy & Safety" color={theme.colors.success} />
           <MenuItem icon={Settings} label="Settings" color={theme.colors.textSecondary} />
@@ -151,7 +180,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   headerTitle: {
-    fontFamily: theme.fonts.bold,
+    fontFamily: theme.fonts.extraBold,
     fontSize: 28,
     fontWeight: '800',
     color: theme.colors.text,
@@ -190,8 +219,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
   name: {
-    fontFamily: theme.fonts.bold,
+    fontFamily: theme.fonts.extraBold,
     fontSize: 24,
     fontWeight: '800',
     color: theme.colors.text,
@@ -217,7 +251,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontFamily: theme.fonts.bold,
+    fontFamily: theme.fonts.extraBold,
     fontSize: 20,
     fontWeight: '800',
     color: theme.colors.primary,
@@ -285,8 +319,61 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     paddingTop: 4,
   },
+  subCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 22,
+    marginTop: 20,
+    backgroundColor: theme.colors.white,
+    borderRadius: 18,
+    padding: 14,
+    gap: 12,
+    ...theme.shadows.sm,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,215,0,0.25)',
+  },
+  subIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subIconPro: {
+    backgroundColor: 'rgba(255,215,0,0.15)',
+  },
+  subIconFree: {
+    backgroundColor: theme.colors.surface,
+  },
+  subInfo: {
+    flex: 1,
+  },
+  subTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  subDesc: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+  upgradeBadge: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  upgradeBadgeText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 11,
+    color: theme.colors.white,
+    fontWeight: '700',
+  },
   menuSection: {
-    marginTop: 24,
+    marginTop: 16,
     paddingHorizontal: 22,
     gap: 8,
   },

@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: {
-    fontFamily: theme.fonts.bold,
+    fontFamily: theme.fonts.extraBold,
     fontSize: 28,
     fontWeight: '800',
     color: theme.colors.text,
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyTitle: {
-    fontFamily: theme.fonts.bold,
+    fontFamily: theme.fonts.extraBold,
     fontSize: 22,
     fontWeight: '800',
     color: theme.colors.text,
