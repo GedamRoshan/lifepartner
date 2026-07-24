@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar, StyleSheet } from 'react-native';
+import BootSplash from 'react-native-bootsplash';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider, useDispatch } from 'react-redux';
 import { store } from './src/store';
@@ -22,6 +23,7 @@ const AppContent = () => {
       } finally {
         dispatch(restoreComplete());
         setIsRestoring(false);
+        BootSplash.hide({ fade: true }).catch(() => {});
       }
     };
 
