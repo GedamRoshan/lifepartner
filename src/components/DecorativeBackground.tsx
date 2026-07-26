@@ -12,7 +12,7 @@ export const DecorativeBackground = () => (
 
 const styles = StyleSheet.create({
   base: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: theme.colors.backgroundSoft,
   },
   blobTop: {

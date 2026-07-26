@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { MapPin, Briefcase, BadgeCheck, Sparkles, ChevronLeft, X, Heart, MessageCircle, Check } from 'lucide-react-native';
+import { MapPin, Briefcase, BadgeCheck, Sparkles, ChevronLeft, X, Heart, MessageCircle, Check, User } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
@@ -127,6 +127,11 @@ export const UserDetailsScreen = () => {
             <View style={styles.infoRow}>
               <Sparkles size={20} color="#FF2D55" />
               <Text style={styles.infoText}>{profile.religion}</Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <User size={20} color="#FF2D55" />
+              <Text style={styles.infoText}>Profile Managed by: {profile.createdFor || profile.profileFor || 'Self'}</Text>
             </View>
           </View>
 

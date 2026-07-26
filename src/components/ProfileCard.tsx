@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { MapPin, Briefcase, BadgeCheck, Sparkles, X, Send, MessageCircle } from 'lucide-react-native';
+import { MapPin, Briefcase, BadgeCheck, Sparkles, X, Send, MessageCircle, User, ShieldCheck } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 
@@ -17,6 +17,9 @@ interface ProfileCardProps {
     image: string;
     distance?: number;
     isVerified?: boolean;
+    isAadhaarVerified?: boolean;
+    createdFor?: string;
+    profileFor?: string;
   };
   onAction?: (type: 'like' | 'dislike') => void;
   onPressProfile?: () => void;
@@ -24,6 +27,8 @@ interface ProfileCardProps {
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onPressProfile }) => {
   const navigation = useNavigation();
+  const createdByText = profile.createdFor || profile.profileFor || 'Self';
+  const isAadhaar = profile.isAadhaarVerified ?? profile.isVerified ?? true;
 
   return (
     <TouchableOpacity 
@@ -34,20 +39,32 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
       <Image source={{ uri: profile.image }} style={styles.image} />
 
       <View style={styles.topBadges}>
-        {profile.isVerified ? (
-          <View style={styles.verifiedBadge}>
-            <BadgeCheck size={14} color="#FFFFFF" />
-            <Text style={styles.verifiedText}>Verified</Text>
+        <View style={styles.leftBadgesContainer}>
+          {isAadhaar && (
+            <View style={styles.aadhaarBadge}>
+              <ShieldCheck size={14} color="#FFFFFF" />
+              <Text style={styles.aadhaarText}>Aadhaar Verified</Text>
+            </View>
+          )}
+          {profile.isVerified && !isAadhaar && (
+            <View style={styles.verifiedBadge}>
+              <BadgeCheck size={14} color="#FFFFFF" />
+              <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.rightBadgesContainer}>
+          <View style={styles.createdForBadge}>
+            <User size={12} color="#FFFFFF" />
+            <Text style={styles.createdForText}>Profile by {createdByText}</Text>
           </View>
-        ) : (
-          <View /> 
-        )}
-        {profile.distance != null && (
-          <View style={styles.distanceBadge}>
-            <MapPin size={12} color="#FFFFFF" />
-            <Text style={styles.distanceText}>{profile.distance} km away</Text>
-          </View>
-        )}
+          {profile.distance != null && (
+            <View style={styles.distanceBadge}>
+              <MapPin size={12} color="#FFFFFF" />
+              <Text style={styles.distanceText}>{profile.distance} km away</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.gradientOverlay}>
@@ -68,8 +85,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
           <Text style={styles.name}>
             {profile.name}, {profile.age}
           </Text>
-          {profile.isVerified && (
-            <BadgeCheck size={20} color="#2196F3" fill="#FFFFFF" style={{ marginLeft: 6, marginTop: 4 }} />
+          {isAadhaar && (
+            <ShieldCheck size={22} color="#0D9488" fill="#CCFBF1" style={{ marginLeft: 6, marginTop: 4 }} />
           )}
         </View>
 
@@ -86,6 +103,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
         <View style={styles.infoRow}>
           <Sparkles size={16} color="#FF6B9D" />
           <Text style={styles.infoText}>{profile.religion}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <User size={16} color="#FF6B9D" />
+          <Text style={styles.infoText}>Profile managed by {createdByText}</Text>
         </View>
 
         <Text style={styles.bio} numberOfLines={3}>
@@ -159,6 +181,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     zIndex: 2,
   },
+  leftBadgesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  aadhaarBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0D9488',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  aadhaarText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -173,6 +219,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  rightBadgesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  createdForBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(233, 30, 99, 0.85)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  createdForText: {
+    fontSize: 11,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   distanceBadge: {
     flexDirection: 'row',

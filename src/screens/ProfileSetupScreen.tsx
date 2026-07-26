@@ -19,11 +19,17 @@ import { Camera, User, Calendar, Briefcase, BookOpen, Sparkles, X } from 'lucide
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { theme } from '../theme';
 import { DecorativeBackground } from '../components/DecorativeBackground';
+import { AppButton } from '../components/AppButton';
+import { AppInput } from '../components/AppInput';
+import { ChipSelector } from '../components/ChipSelector';
+import { SelectPickerModal } from '../components/SelectPickerModal';
 import { useAppDispatch } from '../store/hooks';
 import { loginSuccess } from '../store/slices/authSlice';
 import { saveAuthUser } from '../utils/authStorage';
 
 const STEPS = ['Basic Info', 'About You'];
+const PROFILE_FOR_OPTIONS = ['Self', 'Son', 'Daughter', 'Brother', 'Sister', 'Relative', 'Friend'];
+const GENDER_OPTIONS = ['Male', 'Female', 'Other'];
 const RELIGIONS = ['Hindu', 'Muslim', 'Sikh', 'Christian', 'Buddhist', 'Jain', 'Other'];
 const PROFESSIONS = ['Software Engineer', 'Doctor', 'Teacher', 'Architect', 'Business', 'Finance', 'Student', 'Other'];
 
@@ -32,7 +38,9 @@ export const ProfileSetupScreen = () => {
   const [step, setStep] = useState(0);
   const [photos, setPhotos] = useState<string[]>([]);
   const [form, setForm] = useState({
+    profileFor: 'Self',
     name: '',
+    gender: 'Male',
     age: '',
     religion: '',
     profession: '',
@@ -180,7 +188,7 @@ export const ProfileSetupScreen = () => {
 
   const canProceed =
     step === 0
-      ? form.name.trim() !== '' && form.age.trim() !== '' && photos.length > 0
+      ? form.name.trim() !== '' && form.age.trim() !== '' && form.gender !== '' && form.profileFor !== '' && photos.length > 0
       : form.religion.trim() !== '' && form.profession.trim() !== '';
 
   const handleFinish = async () => {
@@ -305,64 +313,71 @@ export const ProfileSetupScreen = () => {
           <View style={styles.formCard}>
             {step === 0 ? (
               <>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Full Name</Text>
-                  <View style={styles.inputContainer}>
-                    <User size={20} color={theme.colors.primary} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Ex: Rohan Sharma"
-                      placeholderTextColor={theme.colors.textMuted}
-                      value={form.name}
-                      onChangeText={val => updateField('name', val)}
-                    />
-                  </View>
-                </View>
+                <ChipSelector
+                  label="Profile Created For"
+                  options={PROFILE_FOR_OPTIONS}
+                  selectedValue={form.profileFor}
+                  onSelect={option => {
+                    updateField('profileFor', option);
+                    if (option === 'Son' || option === 'Brother') updateField('gender', 'Male');
+                    if (option === 'Daughter' || option === 'Sister') updateField('gender', 'Female');
+                  }}
+                />
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Age</Text>
-                  <View style={styles.inputContainer}>
-                    <Calendar size={20} color={theme.colors.primary} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Ex: 26"
-                      placeholderTextColor={theme.colors.textMuted}
-                      keyboardType="number-pad"
-                      value={form.age}
-                      onChangeText={val => updateField('age', val)}
-                    />
-                  </View>
-                </View>
+                <AppInput
+                  label="Full Name"
+                  placeholder="Ex: Rohan Sharma"
+                  value={form.name}
+                  onChangeText={val => updateField('name', val)}
+                  icon={<User size={20} color={theme.colors.primary} />}
+                />
+
+                <ChipSelector
+                  label="Gender"
+                  options={[
+                    { label: '♂ Male', value: 'Male' },
+                    { label: '♀ Female', value: 'Female' },
+                    { label: 'Other', value: 'Other' },
+                  ]}
+                  selectedValue={form.gender}
+                  onSelect={val => updateField('gender', val)}
+                  fullWidth
+                />
+
+                <AppInput
+                  label="Age"
+                  placeholder="Ex: 26"
+                  keyboardType="number-pad"
+                  value={form.age}
+                  onChangeText={val => updateField('age', val)}
+                  icon={<Calendar size={20} color={theme.colors.primary} />}
+                />
               </>
             ) : (
               <>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Religion</Text>
-                  <TouchableOpacity 
-                    style={styles.inputContainer}
-                    onPress={() => { setDropdownType('religion'); setDropdownVisible(true); }}
-                    activeOpacity={0.8}
-                  >
-                    <BookOpen size={20} color={theme.colors.primary} />
-                    <Text style={[styles.inputText, !form.religion && styles.inputTextPlaceholder]}>
-                      {form.religion || 'Ex: Hindu'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <AppInput
+                  label="Religion"
+                  placeholder="Ex: Hindu"
+                  value={form.religion}
+                  isTouchable
+                  onPressContainer={() => {
+                    setDropdownType('religion');
+                    setDropdownVisible(true);
+                  }}
+                  icon={<BookOpen size={20} color={theme.colors.primary} />}
+                />
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Profession</Text>
-                  <TouchableOpacity 
-                    style={styles.inputContainer}
-                    onPress={() => { setDropdownType('profession'); setDropdownVisible(true); }}
-                    activeOpacity={0.8}
-                  >
-                    <Briefcase size={20} color={theme.colors.primary} />
-                    <Text style={[styles.inputText, !form.profession && styles.inputTextPlaceholder]}>
-                      {form.profession || 'Ex: Architect'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <AppInput
+                  label="Profession"
+                  placeholder="Ex: Architect"
+                  value={form.profession}
+                  isTouchable
+                  onPressContainer={() => {
+                    setDropdownType('profession');
+                    setDropdownVisible(true);
+                  }}
+                  icon={<Briefcase size={20} color={theme.colors.primary} />}
+                />
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Bio</Text>
@@ -396,16 +411,11 @@ export const ProfileSetupScreen = () => {
               </>
             )}
 
-            <TouchableOpacity
-              style={[styles.button, !canProceed && styles.buttonDisabled]}
+            <AppButton
+              title={step === 0 ? 'Continue' : 'Start Discovering'}
               onPress={handleNext}
               disabled={!canProceed}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.buttonText}>
-                {step === 0 ? 'Continue' : 'Start Discovering'}
-              </Text>
-            </TouchableOpacity>
+            />
 
             {step === 1 && (
               <TouchableOpacity style={styles.backLink} onPress={() => setStep(0)}>
@@ -416,39 +426,14 @@ export const ProfileSetupScreen = () => {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Custom Dropdown Bottom Sheet */}
-      <Modal visible={dropdownVisible} transparent animationType="fade">
-        <TouchableOpacity style={styles.modalOverlay} onPress={() => setDropdownVisible(false)} activeOpacity={1} />
-        <View style={styles.dropdownSheet}>
-          <View style={styles.dropdownHeader}>
-            <Text style={styles.dropdownTitle}>
-              Select {dropdownType === 'religion' ? 'Religion' : 'Profession'}
-            </Text>
-            <TouchableOpacity onPress={() => setDropdownVisible(false)}>
-              <X size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={dropdownType === 'religion' ? RELIGIONS : PROFESSIONS}
-            keyExtractor={item => item}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={styles.dropdownItem}
-                onPress={() => {
-                  updateField(dropdownType!, item);
-                  setDropdownVisible(false);
-                }}
-              >
-                <Text style={[
-                  styles.dropdownItemText, 
-                  form[dropdownType!] === item && styles.dropdownItemTextSelected
-                ]}>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </Modal>
+      <SelectPickerModal
+        visible={dropdownVisible}
+        title={`Select ${dropdownType === 'religion' ? 'Religion' : 'Profession'}`}
+        options={dropdownType === 'religion' ? RELIGIONS : PROFESSIONS}
+        selectedValue={form[dropdownType!]}
+        onSelect={val => updateField(dropdownType!, val)}
+        onClose={() => setDropdownVisible(false)}
+      />
     </View>
   );
 };
@@ -804,5 +789,62 @@ const styles = StyleSheet.create({
   dropdownItemTextSelected: {
     fontFamily: theme.fonts.bold,
     color: theme.colors.primary,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+  },
+  chipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  chipText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  chipTextActive: {
+    color: theme.colors.white,
+    fontFamily: theme.fonts.bold,
+    fontWeight: '700',
+  },
+  genderRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  genderChip: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  genderChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  genderChipText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  genderChipTextActive: {
+    color: theme.colors.white,
+    fontFamily: theme.fonts.bold,
+    fontWeight: '700',
   },
 });

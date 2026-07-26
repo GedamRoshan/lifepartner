@@ -19,12 +19,15 @@ import {
   Settings,
   ChevronRight,
   Crown,
+  ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { logout } from '../store/slices/authSlice';
-import { clearAuthUser } from '../utils/authStorage';
+import { logout, updateUserProfile } from '../store/slices/authSlice';
+import { clearAuthUser, saveAuthUser } from '../utils/authStorage';
+import { AadhaarVerificationModal } from '../components/AadhaarVerificationModal';
 
 const MenuItem = ({
   icon: Icon,
@@ -50,10 +53,19 @@ export const ProfileScreen = () => {
   const user = useAppSelector(state => state.auth.user);
   const likedCount = useAppSelector(state => state.profiles.likedProfiles.length);
   const isPro = useAppSelector(state => state.subscription.isPro);
+  
+  const [aadhaarModalVisible, setAadhaarModalVisible] = React.useState(false);
+  const isAadhaarVerified = user?.isAadhaarVerified ?? true;
 
   const handleLogout = async () => {
     await clearAuthUser();
     dispatch(logout());
+  };
+
+  const handleAadhaarSuccess = async () => {
+    const updatedUser = { ...user, isAadhaarVerified: true };
+    dispatch(updateUserProfile({ isAadhaarVerified: true }));
+    await saveAuthUser(updatedUser);
   };
 
   const completionRate = user?.profileCompletion != null ? user.profileCompletion : 85;
@@ -139,6 +151,35 @@ export const ProfileScreen = () => {
           </View>
         </View>
 
+        {/* Aadhaar ID Verification Card */}
+        <TouchableOpacity
+          style={styles.aadhaarCard}
+          onPress={() => setAadhaarModalVisible(true)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.aadhaarIconWrap}>
+            <ShieldCheck size={24} color="#0D9488" />
+          </View>
+          <View style={styles.aadhaarInfo}>
+            <Text style={styles.aadhaarCardTitle}>Govt. Aadhaar ID Verification</Text>
+            <Text style={styles.aadhaarCardSub}>
+              {isAadhaarVerified
+                ? 'Official 100% Verified Profile Badge Active'
+                : 'Verify with Aadhaar to get 5x responses'}
+            </Text>
+          </View>
+          <View style={[styles.aadhaarBadgeChip, isAadhaarVerified ? styles.aadhaarChipVerified : styles.aadhaarChipPending]}>
+            {isAadhaarVerified ? (
+              <>
+                <CheckCircle2 size={12} color="#065F46" />
+                <Text style={styles.aadhaarChipTextVerified}>Verified</Text>
+              </>
+            ) : (
+              <Text style={styles.aadhaarChipTextPending}>Verify Now</Text>
+            )}
+          </View>
+        </TouchableOpacity>
+
         {/* Subscription Status Card */}
         <View style={styles.subCard}>
           <View style={[styles.subIconWrap, isPro ? styles.subIconPro : styles.subIconFree]}>
@@ -171,6 +212,12 @@ export const ProfileScreen = () => {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <AadhaarVerificationModal
+        visible={aadhaarModalVisible}
+        onClose={() => setAadhaarModalVisible(false)}
+        onSuccess={handleAadhaarSuccess}
+      />
     </SafeAreaView>
   );
 };
@@ -427,6 +474,69 @@ const styles = StyleSheet.create({
   logoutText: {
     fontFamily: theme.fonts.bold,
     fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.white,
+  },
+  aadhaarCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    marginHorizontal: 22,
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#BBF7D0',
+    gap: 12,
+    ...theme.shadows.sm,
+  },
+  aadhaarIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#CCFBF1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aadhaarInfo: {
+    flex: 1,
+  },
+  aadhaarCardTitle: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  aadhaarCardSub: {
+    fontFamily: theme.fonts.regular,
+    fontSize: 12,
+    color: '#047857',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  aadhaarBadgeChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  aadhaarChipVerified: {
+    backgroundColor: '#A7F3D0',
+  },
+  aadhaarChipPending: {
+    backgroundColor: '#0D9488',
+  },
+  aadhaarChipTextVerified: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  aadhaarChipTextPending: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 11,
     fontWeight: '700',
     color: theme.colors.white,
   },

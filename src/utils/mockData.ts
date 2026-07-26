@@ -10,6 +10,8 @@ export const MOCK_PROFILES = [
     image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
     distance: 2,
     isVerified: true,
+    isAadhaarVerified: true,
+    createdFor: 'Self',
   },
   {
     id: '2',
@@ -22,6 +24,8 @@ export const MOCK_PROFILES = [
     image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2',
     distance: 5,
     isVerified: true,
+    isAadhaarVerified: true,
+    createdFor: 'Parent',
   },
   {
     id: '3',
@@ -34,6 +38,8 @@ export const MOCK_PROFILES = [
     image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
     distance: 10,
     isVerified: false,
+    isAadhaarVerified: false,
+    createdFor: 'Sibling',
   },
   {
     id: '4',
@@ -46,5 +52,7 @@ export const MOCK_PROFILES = [
     image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1',
     distance: 3,
     isVerified: true,
+    isAadhaarVerified: true,
+    createdFor: 'Self',
   },
 ];
