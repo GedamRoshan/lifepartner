@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Crown,
 } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
@@ -44,6 +45,7 @@ const MenuItem = ({
 );
 
 export const ProfileScreen = () => {
+  const navigation = useNavigation<any>();
   const dispatch = useAppDispatch();
   const user = useAppSelector(state => state.auth.user);
   const likedCount = useAppSelector(state => state.profiles.likedProfiles.length);
@@ -54,12 +56,18 @@ export const ProfileScreen = () => {
     dispatch(logout());
   };
 
+  const completionRate = user?.profileCompletion != null ? user.profileCompletion : 85;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Profile</Text>
-          <TouchableOpacity style={styles.editButton}>
+          <TouchableOpacity 
+            style={styles.editButton} 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
             <Edit3 size={18} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
@@ -88,10 +96,14 @@ export const ProfileScreen = () => {
               <Text style={styles.statLabel}>Matches</Text>
             </View>
             <View style={styles.statDivider} />
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>100%</Text>
+            <TouchableOpacity 
+              style={styles.stat}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Text style={styles.statValue}>{completionRate}%</Text>
               <Text style={styles.statLabel}>Complete</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 

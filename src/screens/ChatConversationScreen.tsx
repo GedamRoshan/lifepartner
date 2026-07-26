@@ -12,7 +12,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { Send, Smile, Phone, MoreVertical, ChevronLeft, Crown } from 'lucide-react-native';
+import { Send, Smile, Phone, MoreVertical, ChevronLeft, Crown, Plus, Mic, CheckCheck, User, ChevronRight, Heart } from 'lucide-react-native';
 import { theme } from '../theme';
 import { useAppSelector } from '../store/hooks';
 
@@ -30,7 +30,7 @@ const INITIAL_MESSAGES: Message[] = [
   { id: '3', text: 'I love exploring new cafes and going for morning runs!', sender: 'other', timestamp: '10:05 AM' },
 ];
 
-export const ChatScreen = () => {
+export const ChatConversationScreen = ({ navigation, route }: any) => {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const isPro = useAppSelector(state => state.subscription.isPro);
@@ -87,22 +87,33 @@ export const ChatScreen = () => {
     }
 
     const isMe = item.sender === 'me';
+    const hasHeart = item.id === '3'; // Just hardcoding the heart reaction for the mockup
 
     return (
       <View style={[styles.messageRow, isMe && styles.messageRowMe]}>
         {!isMe && (
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330' }}
-            style={styles.messageAvatar}
-          />
+          <View style={styles.messageAvatarContainer}>
+            <User size={16} color={theme.colors.primary} />
+          </View>
         )}
-        <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
-          <Text style={[styles.messageText, isMe && styles.myMessageText]}>
-            {item.text}
-          </Text>
-          <Text style={[styles.timestamp, isMe && styles.timestampMe]}>
-            {item.timestamp}
-          </Text>
+        <View style={styles.messageBubbleContainer}>
+          <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
+            <Text style={[styles.messageText, isMe && styles.myMessageText]}>
+              {item.text}
+            </Text>
+            <View style={styles.timeRow}>
+              <Text style={[styles.timestamp, isMe && styles.timestampMe]}>
+                {item.timestamp}
+              </Text>
+              {isMe && <CheckCheck size={14} color="rgba(255,255,255,0.8)" style={styles.checkIcon} />}
+            </View>
+          </View>
+          {hasHeart && (
+            <View style={styles.reactionBadge}>
+              <Heart size={10} color="#FF2D55" fill="#FF2D55" />
+              <Text style={styles.reactionText}>1</Text>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -111,17 +122,16 @@ export const ChatScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color={theme.colors.text} />
         </TouchableOpacity>
 
         <View style={styles.userInfo}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330' }}
-            style={styles.headerAvatar}
-          />
+          <View style={styles.headerAvatarContainer}>
+            <User size={24} color={theme.colors.primary} />
+          </View>
           <View>
-            <Text style={styles.userName}>Ananya Sharma</Text>
+            <Text style={styles.userName}>{route.params?.chatName || 'Connection Request'}</Text>
             <View style={styles.onlineRow}>
               <View style={styles.onlineDot} />
               <Text style={styles.userStatus}>Online</Text>
@@ -141,10 +151,11 @@ export const ChatScreen = () => {
 
       {!isPro && (
         <View style={styles.proHint}>
-          <Crown size={13} color="#B8860B" />
+          <Crown size={14} color="#B8860B" />
           <Text style={styles.proHintText}>
             Upgrade to Pro to share your phone number in chat
           </Text>
+          <ChevronRight size={16} color="#B8860B" />
         </View>
       )}
 
@@ -161,25 +172,35 @@ export const ChatScreen = () => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.emojiBtn}>
-            <Smile size={24} color={theme.colors.textSecondary} />
+          <TouchableOpacity style={styles.plusBtn}>
+            <Plus size={24} color={theme.colors.primary} />
           </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            placeholder="Type a message..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, inputText.trim() === '' && styles.sendButtonDisabled]}
-            onPress={sendMessage}
-            disabled={inputText.trim() === ''}
-            activeOpacity={0.85}
-          >
-            <Send size={20} color={theme.colors.white} />
-          </TouchableOpacity>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Type a message..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+            />
+            <TouchableOpacity style={styles.smileBtn}>
+              <Smile size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          {inputText.trim() === '' ? (
+            <TouchableOpacity style={styles.micBtn}>
+              <Mic size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={sendMessage}
+              activeOpacity={0.85}
+            >
+              <Send size={20} color={theme.colors.white} />
+            </TouchableOpacity>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -210,12 +231,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  headerAvatar: {
+  headerAvatarContainer: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    borderWidth: 2,
-    borderColor: theme.colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: 'rgba(156, 39, 176, 0.2)',
+    backgroundColor: '#F3E8F7',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   userName: {
     fontFamily: theme.fonts.bold,
@@ -282,13 +306,21 @@ const styles = StyleSheet.create({
   messageRowMe: {
     justifyContent: 'flex-end',
   },
-  messageAvatar: {
+  messageAvatarContainer: {
     width: 28,
     height: 28,
     borderRadius: 14,
+    backgroundColor: '#F3E8F7',
+    borderWidth: 1,
+    borderColor: 'rgba(156, 39, 176, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  messageBubbleContainer: {
+    position: 'relative',
   },
   messageBubble: {
-    maxWidth: '78%',
+    maxWidth: 240,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
@@ -310,15 +342,45 @@ const styles = StyleSheet.create({
   myMessageText: {
     color: theme.colors.white,
   },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 4,
+    gap: 4,
+  },
   timestamp: {
     fontFamily: theme.fonts.regular,
     fontSize: 10,
     color: theme.colors.textMuted,
-    alignSelf: 'flex-end',
-    marginTop: 4,
   },
   timestampMe: {
     color: 'rgba(255,255,255,0.65)',
+  },
+  checkIcon: {
+    marginLeft: 2,
+  },
+  reactionBadge: {
+    position: 'absolute',
+    bottom: -10,
+    left: 10,
+    backgroundColor: theme.colors.white,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  reactionText: {
+    fontFamily: theme.fonts.medium,
+    fontSize: 10,
+    color: theme.colors.textSecondary,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -330,21 +392,42 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.border,
     gap: 8,
   },
-  emojiBtn: {
-    padding: 8,
-    marginBottom: 2,
+  plusBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F3E8F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 22,
+    paddingRight: 12,
   },
   input: {
     flex: 1,
     fontFamily: theme.fonts.regular,
     minHeight: 42,
     maxHeight: 100,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 10,
     color: theme.colors.text,
     fontSize: 15,
+  },
+  smileBtn: {
+    padding: 4,
+  },
+  micBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   sendButton: {
     width: 42,

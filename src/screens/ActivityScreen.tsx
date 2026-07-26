@@ -9,8 +9,11 @@ import {
   Platform,
   SafeAreaView,
   Animated,
+  RefreshControl,
 } from 'react-native';
-import { Check, X, Clock, Heart, MoreVertical, MapPin, Bell } from 'lucide-react-native';
+import { Check, X, Clock, Heart, MoreVertical, MapPin, Bell, Crown, ChevronRight, ChevronDown } from 'lucide-react-native';
+import Reanimated, { FadeInUp, FadeInDown, Layout, BounceIn, useSharedValue, useAnimatedStyle, withTiming, withSpring, withDelay, interpolateColor } from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native';
 
 const COLORS = {
   primary: '#FF2D55',
@@ -22,6 +25,7 @@ const COLORS = {
   text: '#0F172A',
   textSecondary: '#64748B',
   border: '#E2E8F0',
+  pinkGradient: ['#FF2D55', '#FF6B8B'],
 };
 
 type ActivityStatus = 'accepted' | 'declined' | 'pending';
@@ -104,22 +108,34 @@ const StatusBadge = ({ status }: { status: ActivityStatus }) => {
   }[status];
 
   return (
-    <View style={[styles.badge, { backgroundColor: config.bg, borderColor: config.bg }]}>
+    <View style={[styles.badge, { backgroundColor: config.bg }]}>
       <config.Icon size={12} color={config.color} strokeWidth={3} />
       <Text style={[styles.badgeText, { color: config.color }]}>{config.label}</Text>
     </View>
   );
 };
 
-const ActivityCard = ({ item }: { item: ActivityItem }) => {
+const ActivityCard = ({ item, index }: { item: ActivityItem; index: number }) => {
+  const navigation = useNavigation();
   const statusColor = COLORS[item.status];
 
   return (
-    <View style={styles.cardWrapper}>
+    <Reanimated.View 
+      entering={FadeInDown.delay(index * 80).springify().damping(16).mass(0.8).stiffness(150)}
+      layout={Layout.springify().damping(16)}
+      style={styles.cardWrapper}
+    >
       {/* Colored Left Border Strip */}
       <View style={[styles.cardBorderLeft, { backgroundColor: statusColor }]} />
       
-      <View style={styles.cardContent}>
+      <TouchableOpacity 
+        style={styles.cardContent} 
+        activeOpacity={0.7}
+        onPress={() => {
+          // @ts-ignore
+          navigation.navigate('ChatConversation', { chatName: item.name, avatar: item.image });
+        }}
+      >
         <Image source={{ uri: item.image }} style={styles.avatar} />
         
         <View style={styles.cardBody}>
@@ -156,39 +172,37 @@ const ActivityCard = ({ item }: { item: ActivityItem }) => {
           
           <Text style={styles.timeAgo}>{item.timeAgo}</Text>
         </View>
-      </View>
-    </View>
+      </TouchableOpacity>
+    </Reanimated.View>
   );
 };
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
-
 const AnimatedTab = ({ isActive, label, onPress }: { isActive: boolean; label: string; onPress: () => void }) => {
-  const animation = useRef(new Animated.Value(isActive ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.timing(animation, {
-      toValue: isActive ? 1 : 0,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
-  }, [isActive, animation]);
-
-  const backgroundColor = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [COLORS.surface, COLORS.primary]
-  });
-
   return (
-    <AnimatedTouchableOpacity
-      activeOpacity={0.8}
-      style={[styles.tab, { backgroundColor }]}
-      onPress={onPress}
+    <TouchableOpacity 
+      activeOpacity={0.8} 
+      onPress={onPress} 
+      style={[
+        styles.tab, 
+        isActive ? styles.tabActive : styles.tabInactive
+      ]}
     >
-      <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+      <Text style={[styles.tabText, isActive ? styles.tabTextActive : styles.tabTextInactive]}>
         {label}
       </Text>
-    </AnimatedTouchableOpacity>
+    </TouchableOpacity>
+  );
+};
+
+const AnimatedCounter = ({ count, color }: { count: number, color: string }) => {
+  // Simple component to show the bounce in for the count
+  return (
+    <Reanimated.Text 
+      entering={BounceIn.delay(300)}
+      style={[styles.statNumber, { color }]}
+    >
+      {count}
+    </Reanimated.Text>
   );
 };
 
@@ -204,9 +218,21 @@ export const ActivityScreen = () => {
   const declinedCount = MOCK_ACTIVITIES.filter(a => a.status === 'declined').length;
   const pendingCount = MOCK_ACTIVITIES.filter(a => a.status === 'pending').length;
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <Reanimated.View 
+        entering={FadeInUp.duration(600).springify()} 
+        style={styles.container}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -225,36 +251,33 @@ export const ActivityScreen = () => {
         <View style={styles.statsRow}>
           {/* Accepted Card */}
           <View style={styles.statCardWrap}>
-            <View style={[styles.statCardBorderTop, { backgroundColor: COLORS.accepted }]} />
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: '#F0FDF4' }]}>
                 <Heart size={20} color={COLORS.accepted} />
               </View>
-              <Text style={[styles.statNumber, { color: COLORS.accepted }]}>{acceptedCount}</Text>
+              <AnimatedCounter count={acceptedCount} color={COLORS.accepted} />
               <Text style={styles.statLabel}>Accepted</Text>
             </View>
           </View>
           
           {/* Declined Card */}
           <View style={styles.statCardWrap}>
-            <View style={[styles.statCardBorderTop, { backgroundColor: COLORS.declined }]} />
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: '#FEF2F2' }]}>
                 <X size={20} color={COLORS.declined} strokeWidth={2.5} />
               </View>
-              <Text style={[styles.statNumber, { color: COLORS.declined }]}>{declinedCount}</Text>
+              <AnimatedCounter count={declinedCount} color={COLORS.declined} />
               <Text style={styles.statLabel}>Declined</Text>
             </View>
           </View>
           
           {/* Pending Card */}
           <View style={styles.statCardWrap}>
-            <View style={[styles.statCardBorderTop, { backgroundColor: COLORS.pending }]} />
             <View style={styles.statCard}>
               <View style={[styles.statIconBox, { backgroundColor: '#FAF5FF' }]}>
                 <Clock size={20} color={COLORS.pending} />
               </View>
-              <Text style={[styles.statNumber, { color: COLORS.pending }]}>{pendingCount}</Text>
+              <AnimatedCounter count={pendingCount} color={COLORS.pending} />
               <Text style={styles.statLabel}>Pending</Text>
             </View>
           </View>
@@ -275,10 +298,36 @@ export const ActivityScreen = () => {
           })}
         </View>
 
+        {/* Premium Banner */}
+        <TouchableOpacity style={styles.premiumBanner} activeOpacity={0.9}>
+          <View style={styles.premiumIconWrap}>
+            <Crown size={22} color={COLORS.white} strokeWidth={2.5} />
+          </View>
+          <View style={styles.premiumTextWrap}>
+            <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
+            <Text style={styles.premiumSub}>Unlock exclusive features and connect without limits.</Text>
+          </View>
+          <ChevronRight size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+
+        {/* Section Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Requests</Text>
+          <Text style={styles.sectionSubTitle}>Today <ChevronDown size={14} color={COLORS.textSecondary} /></Text>
+        </View>
+
         {/* List */}
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.primary}
+              colors={[COLORS.primary]}
+            />
+          }
         >
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>
@@ -286,10 +335,10 @@ export const ActivityScreen = () => {
               <Text style={styles.emptyTitle}>No activity yet</Text>
             </View>
           ) : (
-            filtered.map(item => <ActivityCard key={item.id} item={item} />)
+            filtered.map((item, index) => <ActivityCard key={item.id} item={item} index={index} />)
           )}
         </ScrollView>
-      </View>
+      </Reanimated.View>
     </SafeAreaView>
   );
 };
@@ -365,10 +414,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
   },
   statCardBorderTop: {
     height: 4,
@@ -401,26 +450,92 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 8,
     marginBottom: 16,
-    justifyContent: 'space-between',
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
+    paddingHorizontal: 10,
     borderRadius: 24,
-    backgroundColor: COLORS.surface,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   tabActive: {
     backgroundColor: COLORS.primary,
+    elevation: 3,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  tabInactive: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   tabText: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    textAlign: 'center',
   },
   tabTextActive: {
     color: COLORS.white,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  tabTextInactive: {
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  premiumBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    marginHorizontal: 24,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#FFE4EE',
+  },
+  premiumIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  premiumTextWrap: {
+    flex: 1,
+  },
+  premiumTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: 2,
+  },
+  premiumSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  sectionSubTitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   listContent: {
     paddingHorizontal: 20,
@@ -432,11 +547,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#1A0010', // Tinted dark shadow for depth
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowRadius: 18,
+    elevation: 4,
   },
   cardBorderLeft: {
     width: 6,

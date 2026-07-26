@@ -48,7 +48,7 @@ export const LoginScreen = ({ navigation }: any) => {
 
       {/* Background Image */}
       <Image
-        source={require('../assets/images/wedding.png')}
+        source={require('../assets/images/wedding.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />

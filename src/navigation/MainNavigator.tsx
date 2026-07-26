@@ -12,7 +12,7 @@ import {
 import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { ActivityScreen } from '../screens/ActivityScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
-import { ChatScreen } from '../screens/ChatScreen';
+import { ChatNavigator } from './ChatNavigator';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { theme } from '../theme';
 
@@ -74,7 +74,7 @@ export const MainNavigator = () => {
       />
       <Tab.Screen
         name="Chat"
-        component={ChatScreen}
+        component={ChatNavigator}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon Icon={MessageCircle} color={color} size={size} focused={focused} />
