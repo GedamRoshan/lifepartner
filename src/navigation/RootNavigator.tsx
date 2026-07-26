@@ -7,6 +7,8 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { OTPScreen } from '../screens/OTPScreen';
 import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
 import { UserDetailsScreen } from '../screens/UserDetailsScreen';
+import { ChatConversationScreen } from '../screens/ChatConversationScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { MainNavigator } from './MainNavigator';
 
 const Stack = createStackNavigator();
@@ -21,6 +23,8 @@ export const RootNavigator = () => {
           <>
             <Stack.Screen name="Main" component={MainNavigator} />
             <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
+            <Stack.Screen name="ChatConversation" component={ChatConversationScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           </>
         ) : (
           <>

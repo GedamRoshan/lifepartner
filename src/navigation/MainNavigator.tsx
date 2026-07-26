@@ -6,13 +6,13 @@ import {
   MessageCircle,
   User,
   Compass,
-  Heart,
+  Crown,
 } from 'lucide-react-native';
 
 import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { ActivityScreen } from '../screens/ActivityScreen';
-import { MatchesScreen } from '../screens/MatchesScreen';
-import { ChatScreen } from '../screens/ChatScreen';
+import { SubscriptionScreen } from '../screens/SubscriptionScreen';
+import { ChatNavigator } from './ChatNavigator';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { theme } from '../theme';
 
@@ -64,17 +64,17 @@ export const MainNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Matches"
-        component={MatchesScreen}
+        name="Premium"
+        component={SubscriptionScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon Icon={Heart} color={color} size={size} focused={focused} />
+            <TabIcon Icon={Crown} color={color} size={size} focused={focused} />
           ),
         }}
       />
       <Tab.Screen
         name="Chat"
-        component={ChatScreen}
+        component={ChatNavigator}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <TabIcon Icon={MessageCircle} color={color} size={size} focused={focused} />

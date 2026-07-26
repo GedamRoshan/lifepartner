@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { MapPin, Briefcase, BadgeCheck, Sparkles, X, Send, MessageCircle } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,6 +23,8 @@ interface ProfileCardProps {
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onPressProfile }) => {
+  const navigation = useNavigation();
+
   return (
     <TouchableOpacity 
       style={styles.card} 
@@ -108,7 +111,14 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
           </View>
 
           <View style={styles.actionItem}>
-            <TouchableOpacity style={styles.actionButtonMedium} activeOpacity={0.85}>
+            <TouchableOpacity 
+              style={styles.actionButtonMedium} 
+              activeOpacity={0.85}
+              onPress={() => {
+                // @ts-ignore
+                navigation.navigate('ChatConversation', { chatName: profile.name, avatar: profile.image });
+              }}
+            >
               <MessageCircle size={28} color="#7C3AED" strokeWidth={2.5} />
             </TouchableOpacity>
             <Text style={styles.actionLabelPrimary}>Chat</Text>

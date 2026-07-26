@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,209 +6,333 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Alert,
-  Animated,
+  Image,
+  Dimensions,
 } from 'react-native';
 import {
   Crown,
+  ChevronLeft,
   Check,
-  Image as ImageIcon,
-  Phone,
-  MessageCircle,
-  Star,
-  Zap,
-  Shield,
   Heart,
-  Sparkles,
+  MessageCircle,
+  EyeOff,
+  Shield,
+  Filter,
+  Zap,
+  Star,
+  Target,
+  CheckCheck,
+  Percent,
+  Gem,
+  Quote
 } from 'lucide-react-native';
-import { theme } from '../theme';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { activatePro } from '../store/slices/subscriptionSlice';
+import { useNavigation } from '@react-navigation/native';
 
-const FEATURES_PRO = [
+const { width } = Dimensions.get('window');
+
+const PLANS = [
   {
-    icon: ImageIcon,
-    title: 'View All Photos',
-    description: 'See every photo in another user\'s gallery without any blur',
-    color: '#9C27B0',
+    id: 1,
+    durationText: '12\nMonths',
+    icon: Crown,
+    price: '180',
+    period: '/ for 1 months',
+    total: '750',
+    original: '1,800',
+    save: 'Save 58%',
+    color: '#FF3366',
+    popular: true,
   },
   {
-    icon: Phone,
-    title: 'Share Phone Number in Chat',
-    description: 'Send your number directly through chat to connect personally',
-    color: '#E91E63',
-  },
-  {
-    icon: Heart,
-    title: 'Unlimited Likes',
-    description: 'Like as many profiles as you want without daily limits',
-    color: '#F44336',
-  },
-  {
+    id: 2,
+    durationText: '3\nMonths',
     icon: Star,
-    title: 'Priority Discovery',
-    description: 'Your profile appears first in others\' Discover feed',
-    color: '#FF9800',
+    price: '350',
+    period: '/ for 3 months',
+    total: '350',
+    original: '500',
+    save: 'Save 30%',
+    color: '#7E57C2',
+    popular: false,
   },
   {
-    icon: Shield,
-    title: 'Verified Badge',
-    description: 'Stand out with a blue Pro verification badge on your profile',
-    color: '#2196F3',
-  },
-  {
-    icon: Zap,
-    title: 'Instant Match Alerts',
-    description: 'Get real-time notifications when someone matches with you',
-    color: '#4CAF50',
+    id: 3,
+    durationText: '12\nMonths',
+    icon: Gem,
+    price: '750',
+    period: '/ for 12 months',
+    total: '750',
+    original: '1,800',
+    save: 'Save 58%',
+    color: '#7E57C2',
+    popular: false,
   },
 ];
 
-const FEATURES_FREE = [
-  { label: 'View profile & details of other users', included: true },
-  { label: 'Free chat once you have a mutual match', included: true },
-  { label: 'Basic swipe & discover', included: true },
-  { label: 'View all photos of a user', included: false },
-  { label: 'Share phone number in chat', included: false },
-  { label: 'Unlimited likes per day', included: false },
-  { label: 'Priority in discovery feed', included: false },
+const FEATURES_INCLUDED = [
+  { icon: Crown, label: 'Unlimited Likes\n& Interest' },
+  { icon: Heart, label: 'See Who\nLiked You' },
+  { icon: MessageCircle, label: 'Unlimited\nChat' },
+  { icon: CheckCheck, label: 'Read\nReceipts' },
+  { icon: EyeOff, label: 'Incognito\nMode' },
+  { icon: Shield, label: 'Premium\nBadges' },
+  { icon: Filter, label: 'Advanced\nFilters' },
+  { icon: Zap, label: 'Profile Boost\n(3x/month)' },
+];
+
+const WHY_PREMIUM = [
+  { icon: Heart, text: 'Get more matches and meaningful connections' },
+  { icon: Star, text: 'Stand out with premium features' },
+  { icon: Shield, text: 'Control your privacy and preferences' },
+  { icon: Target, text: 'Increase your chances of finding the one' },
 ];
 
 export const SubscriptionScreen = () => {
-  const dispatch = useAppDispatch();
-  const isPro = useAppSelector(state => state.subscription.isPro);
-  const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
+  const [selectedPlanId, setSelectedPlanId] = useState(1);
+  const [timeLeft, setTimeLeft] = useState({ hrs: 23, mins: 59, secs: 48 });
 
-  const handleSubscribe = () => {
-    Alert.alert(
-      'Confirm Subscription',
-      'Subscribe to LifePartner Pro for ₹250/month?\n\nYou will get unlimited access to all premium features.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Subscribe ₹250',
-          style: 'default',
-          onPress: () => {
-            setLoading(true);
-            // Simulate payment processing
-            setTimeout(() => {
-              setLoading(false);
-              dispatch(activatePro());
-              Alert.alert(
-                '🎉 Welcome to Pro!',
-                'Your subscription is now active. Enjoy all premium features!',
-                [{ text: 'Let\'s Go!' }],
-              );
-            }, 1500);
-          },
-        },
-      ],
-    );
-  };
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        let { hrs, mins, secs } = prev;
+        if (secs > 0) secs--;
+        else {
+          secs = 59;
+          if (mins > 0) mins--;
+          else {
+            mins = 59;
+            if (hrs > 0) hrs--;
+          }
+        }
+        return { hrs, mins, secs };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (val: number) => (val < 10 ? `0${val}` : val);
+
+  const renderPaymentLogos = () => (
+    <View style={styles.paymentLogosContainer}>
+      <Text style={[styles.paymentLogoText, { color: '#000', fontWeight: '800', fontStyle: 'italic' }]}>UPI</Text>
+      <Text style={[styles.paymentLogoText, { color: '#1A1F71', fontWeight: '800', fontStyle: 'italic' }]}>VISA</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={[styles.mastercardCircle, { backgroundColor: '#EB001B', right: -6 }]} />
+        <View style={[styles.mastercardCircle, { backgroundColor: '#F79E1B' }]} />
+      </View>
+      <Text style={[styles.paymentLogoText, { color: '#002663', fontWeight: '800' }]}>RuPay</Text>
+      <Text style={[styles.paymentLogoText, { color: '#00B9F1', fontWeight: '900', fontStyle: 'italic' }]}>Paytm</Text>
+      <Text style={[styles.paymentLogoText, { color: '#5F6368', fontWeight: '700' }]}>G Pay</Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}>
-
-        {/* Hero Section */}
-        <View style={styles.hero}>
-          <View style={styles.crownCircle}>
-            <Crown size={40} color="#FFD700" fill="#FFD700" />
-          </View>
-          <Text style={styles.heroTitle}>LifePartner Pro</Text>
-          <Text style={styles.heroSubtitle}>
-            Unlock everything. Find your perfect match faster.
-          </Text>
-
-          {isPro && (
-            <View style={styles.activeProBadge}>
-              <Sparkles size={14} color="#FFD700" />
-              <Text style={styles.activeProText}>You're a Pro Member 🎉</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Price Card */}
-        <View style={styles.priceCard}>
-          <View style={styles.priceBadge}>
-            <Text style={styles.priceBadgeText}>MOST POPULAR</Text>
-          </View>
-          <View style={styles.priceRow}>
-            <Text style={styles.currency}>₹</Text>
-            <Text style={styles.price}>250</Text>
-            <Text style={styles.pricePeriod}>/month</Text>
-          </View>
-          <Text style={styles.priceDescription}>
-            Cancel anytime · No hidden charges
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.subscribeBtn, isPro && styles.subscribeBtnActive, loading && styles.subscribeBtnLoading]}
-            onPress={isPro ? undefined : handleSubscribe}
-            activeOpacity={isPro ? 1 : 0.85}
-            disabled={loading}>
-            <Crown size={18} color={isPro ? '#FFD700' : theme.colors.white} />
-            <Text style={[styles.subscribeBtnText, isPro && styles.subscribeBtnTextActive]}>
-              {loading ? 'Processing...' : isPro ? 'Active Subscription ✓' : 'Subscribe Now — ₹250'}
-            </Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.8}>
+            <ChevronLeft size={24} color="#FF3366" strokeWidth={3} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Subscriptions</Text>
+          <TouchableOpacity activeOpacity={0.8}>
+            <Text style={styles.restoreText}>Restore</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Pro Features */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What you get with Pro</Text>
-          <View style={styles.featuresGrid}>
-            {FEATURES_PRO.map((feature, idx) => (
-              <View key={idx} style={styles.featureCard}>
-                <View style={[styles.featureIconWrap, { backgroundColor: feature.color + '18' }]}>
-                  <feature.icon size={22} color={feature.color} />
-                </View>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
-              </View>
-            ))}
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroTextContent}>
+            <Text style={styles.heroTitle}>Go Premium 👑</Text>
+            <Text style={styles.heroSubtitle}>
+              Unlock meaningful connections and find your <Text style={{ color: '#FF3366', fontWeight: '700' }}>LifePartner</Text>
+            </Text>
+          </View>
+          
+          <View style={styles.crownVisualContainer}>
+            {/* Simulated 3D Crown using layers since image isn't available */}
+            <View style={styles.podiumBase} />
+            <View style={styles.podiumTop} />
+            <Text style={{ fontSize: 60, position: 'absolute', top: -30 }}>👑</Text>
+            <Text style={styles.floatingHeart1}>💖</Text>
+            <Text style={styles.floatingHeart2}>✨</Text>
           </View>
         </View>
 
-        {/* Free vs Pro Comparison */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Free vs Pro</Text>
-          <View style={styles.comparisonCard}>
-            {FEATURES_FREE.map((item, idx) => (
-              <View
-                key={idx}
+        {/* Offer Banner */}
+        <View style={styles.offerBanner}>
+          <View style={styles.offerLeft}>
+            <View style={styles.offerIconWrap}>
+              <Percent size={18} color="#FF3366" strokeWidth={3} />
+            </View>
+            <View>
+              <Text style={styles.offerTitle}>Limited Time Offer</Text>
+              <Text style={styles.offerSub}>Get 50% OFF on all plans</Text>
+            </View>
+          </View>
+          <View style={styles.timerBox}>
+            <Text style={styles.timerText}>
+              {formatTime(timeLeft.hrs)} <Text style={styles.timerColon}>:</Text> {formatTime(timeLeft.mins)} <Text style={styles.timerColon}>:</Text> {formatTime(timeLeft.secs)}
+            </Text>
+            <View style={styles.timerLabels}>
+              <Text style={styles.timerLabelText}>HRS</Text>
+              <Text style={styles.timerLabelText}>MINS</Text>
+              <Text style={styles.timerLabelText}>SECS</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Plans */}
+        <Text style={styles.sectionHeading}>Choose Your Plan</Text>
+        <View style={styles.plansContainer}>
+          {PLANS.map((plan) => {
+            const isSelected = selectedPlanId === plan.id;
+            return (
+              <TouchableOpacity
+                key={plan.id}
                 style={[
-                  styles.comparisonRow,
-                  idx < FEATURES_FREE.length - 1 && styles.comparisonRowBorder,
-                ]}>
-                <View style={[styles.checkCircle, item.included ? styles.checkIncluded : styles.checkExcluded]}>
-                  {item.included ? (
-                    <Check size={13} color="#43A047" strokeWidth={3} />
-                  ) : (
-                    <Text style={styles.crossText}>✕</Text>
-                  )}
-                </View>
-                <Text style={[styles.comparisonLabel, !item.included && styles.comparisonLabelMuted]}>
-                  {item.label}
-                </Text>
-                {!item.included && (
-                  <View style={styles.proBadgeSmall}>
-                    <Crown size={9} color="#FFD700" />
-                    <Text style={styles.proBadgeSmallText}>PRO</Text>
+                  styles.planCard,
+                  isSelected && styles.planCardSelected,
+                ]}
+                onPress={() => setSelectedPlanId(plan.id)}
+                activeOpacity={0.9}
+              >
+                {plan.popular && (
+                  <View style={styles.popularBadge}>
+                    <Text style={styles.popularBadgeText}>Most Popular</Text>
                   </View>
                 )}
+
+                <View style={styles.planHeaderRow}>
+                  <View style={[styles.planIconBox, { backgroundColor: plan.color }]}>
+                    <plan.icon size={20} color="#FFF" />
+                    <Text style={styles.planDurationText}>{plan.durationText}</Text>
+                  </View>
+
+                  <View style={styles.planDetails}>
+                    <View style={styles.priceRow}>
+                      <Text style={[styles.planCurrency, { color: plan.color }]}>₹</Text>
+                      <Text style={[styles.planPrice, { color: plan.color }]}>{plan.price}</Text>
+                      <Text style={styles.planPeriod}>{plan.period}</Text>
+                    </View>
+                    <View style={styles.totalRow}>
+                      <Text style={styles.totalText}>Total</Text>
+                      <Text style={[styles.totalAmount, { color: plan.color }]}>₹{plan.total}</Text>
+                      <Text style={styles.originalAmount}>₹{plan.original}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.planRight}>
+                    <View style={styles.saveBadge}>
+                      <Text style={styles.saveBadgeText}>{plan.save}</Text>
+                    </View>
+                    {!isSelected && (
+                      <View style={styles.radioOutline} />
+                    )}
+                  </View>
+                </View>
+
+                {isSelected && plan.popular && (
+                  <View style={styles.expandedContent}>
+                    <View style={styles.featuresList}>
+                      {[
+                        'Unlimited Likes & Interest',
+                        'See Who Liked You',
+                        'Unlimited Chat',
+                        'Read Receipts',
+                        'Incognito Mode',
+                        'Premium Badges',
+                        'Advanced Filters',
+                        'Profile Boost (3x/month)',
+                        'Cancel Anytime'
+                      ].map((feature, idx) => (
+                        <View key={idx} style={styles.featureListItem}>
+                          <View style={styles.checkCircleFill}>
+                            <Check size={10} color="#FFF" strokeWidth={3} />
+                          </View>
+                          <Text style={styles.featureListText}>{feature}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    <TouchableOpacity style={styles.choosePlanBtn} activeOpacity={0.85}>
+                      <Text style={styles.choosePlanBtnText}>Choose Plan</Text>
+                      <ChevronLeft size={20} color="#FFF" style={{ transform: [{ rotate: '180deg' }], position: 'absolute', right: 24 }} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Features Included */}
+        <Text style={styles.sectionHeading}>FEATURES INCLUDED</Text>
+        <View style={styles.featuresGrid}>
+          {FEATURES_INCLUDED.map((item, idx) => (
+            <View key={idx} style={styles.gridItem}>
+              <View style={styles.gridIconWrap}>
+                <item.icon size={22} color="#FF3366" />
               </View>
-            ))}
+              <Text style={styles.gridItemLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Why Go Premium */}
+        <Text style={styles.sectionHeading}>WHY GO PREMIUM?</Text>
+        <View style={styles.whyList}>
+          {WHY_PREMIUM.map((item, idx) => (
+            <View key={idx} style={styles.whyListItem}>
+              <item.icon size={18} color="#7E57C2" />
+              <Text style={styles.whyListText}>{item.text}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Testimonial */}
+        <View style={styles.testimonialCard}>
+          <View style={styles.quoteIconWrap}>
+            <Quote size={20} color="#FF3366" fill="#FF3366" />
+            <View style={styles.starsRow}>
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={16} color="#FFB800" fill="#FFB800" />
+              ))}
+            </View>
+          </View>
+          <Text style={styles.testimonialText}>
+            Premium membership is totally worth it! I got more matches and found amazing people.
+          </Text>
+          <View style={styles.testimonialUser}>
+            <Image source={{ uri: 'https://i.pravatar.cc/150?img=47' }} style={styles.testimonialAvatar} />
+            <View>
+              <Text style={styles.testimonialName}>Priya S.</Text>
+              <Text style={styles.testimonialRole}>Premium Member</Text>
+            </View>
           </View>
         </View>
 
-        {/* Security note */}
-        <View style={styles.securityNote}>
-          <Shield size={14} color={theme.colors.textMuted} />
-          <Text style={styles.securityText}>
-            Secure payment · Auto-renews monthly · Cancel anytime from settings
+        {/* Security & Payment */}
+        <View style={styles.securitySection}>
+          <View style={styles.secureHeader}>
+            <Shield size={16} color="#10B981" fill="#10B981" />
+            <Text style={styles.secureTitle}>Secure Payment</Text>
+          </View>
+          <Text style={styles.secureDesc}>
+            Your payment information is encrypted and secure
+          </Text>
+
+          <View style={styles.weAcceptLine}>
+            <View style={styles.line} />
+            <Text style={styles.weAcceptText}>We Accept</Text>
+            <View style={styles.line} />
+          </View>
+
+          {renderPaymentLogos()}
+
+          <Text style={styles.footerDisclaimer}>
+            Recurring billing. Cancel anytime from Play Store / App Store{'\n'}
+            Your subscription will auto-renew before the end of the current period.
           </Text>
         </View>
 
@@ -220,280 +344,493 @@ export const SubscriptionScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundSoft,
+    backgroundColor: '#F8FAFC', // light background
   },
-  scroll: {
-    paddingBottom: 48,
+  scrollContent: {
+    paddingBottom: 40,
   },
-
-  // Hero
-  hero: {
-    alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
-  },
-  crownCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(255,215,0,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255,215,0,0.3)',
-  },
-  heroTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 30,
-    fontWeight: '900',
-    color: theme.colors.text,
-    letterSpacing: -0.5,
-    textAlign: 'center',
-  },
-  heroSubtitle: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 15,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 22,
-    paddingHorizontal: 16,
-  },
-  activeProBadge: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,215,0,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.4)',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginTop: 14,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    marginBottom: 20,
   },
-  activeProText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 13,
-    color: '#B8860B',
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF3366',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
     fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  restoreText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FF3366',
   },
 
-  // Price Card
-  priceCard: {
-    marginHorizontal: 20,
-    backgroundColor: theme.colors.white,
-    borderRadius: 28,
-    padding: 24,
+  heroSection: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    marginBottom: 24,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: theme.colors.primary + '30',
-    ...theme.shadows.md,
   },
-  priceBadge: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    marginBottom: 16,
+  heroTextContent: {
+    flex: 1,
+    paddingRight: 10,
   },
-  priceBadgeText: {
-    fontFamily: theme.fonts.extraBold,
-    fontSize: 11,
-    color: theme.colors.white,
+  heroTitle: {
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  crownVisualContainer: {
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    position: 'relative',
+  },
+  podiumBase: {
+    width: 80,
+    height: 20,
+    backgroundColor: '#FF6699',
+    borderRadius: 40,
+    transform: [{ scaleY: 0.5 }],
+    position: 'absolute',
+    bottom: -5,
+  },
+  podiumTop: {
+    width: 70,
+    height: 20,
+    backgroundColor: '#FFB6C1',
+    borderRadius: 35,
+    transform: [{ scaleY: 0.5 }],
+    position: 'absolute',
+    bottom: 2,
+  },
+  floatingHeart1: {
+    position: 'absolute',
+    top: 10,
+    right: -10,
+    fontSize: 16,
+  },
+  floatingHeart2: {
+    position: 'absolute',
+    top: 20,
+    left: -10,
+    fontSize: 14,
+  },
+
+  offerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FCE4EC',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+  },
+  offerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  offerIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ rotate: '-10deg' }],
+  },
+  offerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FF3366',
+    marginBottom: 2,
+  },
+  offerSub: {
+    fontSize: 12,
+    color: '#666',
+  },
+  timerBox: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  timerText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FF3366',
+  },
+  timerColon: {
+    color: '#666',
+    fontWeight: '400',
+  },
+  timerLabels: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+  },
+  timerLabelText: {
+    fontSize: 8,
+    color: '#666',
+    fontWeight: '600',
+  },
+
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginLeft: 24,
+    marginBottom: 16,
+    textTransform: 'uppercase',
+  },
+
+  plansContainer: {
+    paddingHorizontal: 20,
+    gap: 16,
+    marginBottom: 32,
+  },
+  planCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: '#F0F0F0',
+  },
+  planCardSelected: {
+    borderColor: '#FF3366',
+    shadowColor: '#FF3366',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: -12,
+    left: 20,
+    backgroundColor: '#FF3366',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  popularBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  planHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  planIconBox: {
+    width: 56,
+    height: 70,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  planDurationText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  planDetails: {
+    flex: 1,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 4,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  currency: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 28,
-    fontWeight: '700',
-    color: theme.colors.primary,
-    marginBottom: 6,
-  },
-  price: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 64,
-    fontWeight: '900',
-    color: theme.colors.primary,
-    lineHeight: 70,
-    letterSpacing: -2,
-  },
-  pricePeriod: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 18,
-    color: theme.colors.textSecondary,
-    marginBottom: 10,
-  },
-  priceDescription: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    marginBottom: 22,
-  },
-  subscribeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 18,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    width: '100%',
-    gap: 10,
-    ...theme.shadows.md,
-  },
-  subscribeBtnActive: {
-    backgroundColor: 'rgba(255,215,0,0.12)',
-    borderWidth: 1.5,
-    borderColor: '#FFD700',
-  },
-  subscribeBtnLoading: {
-    opacity: 0.65,
-  },
-  subscribeBtnText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 17,
-    color: theme.colors.white,
-    fontWeight: '700',
-  },
-  subscribeBtnTextActive: {
-    color: '#B8860B',
-  },
-
-  // Section
-  section: {
-    marginTop: 28,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontFamily: theme.fonts.extraBold,
+  planCurrency: {
     fontSize: 20,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 16,
-    letterSpacing: -0.3,
-  },
-
-  // Features grid
-  featuresGrid: {
-    gap: 12,
-  },
-  featureCard: {
-    backgroundColor: theme.colors.white,
-    borderRadius: 20,
-    padding: 18,
-    ...theme.shadows.sm,
-  },
-  featureIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  featureTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 15,
     fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 5,
+    marginBottom: 2,
   },
-  featureDescription: {
-    fontFamily: theme.fonts.regular,
+  planPrice: {
+    fontSize: 28,
+    fontWeight: '800',
+    lineHeight: 32,
+  },
+  planPeriod: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
-    lineHeight: 19,
+    color: '#666',
+    marginLeft: 4,
+    marginBottom: 4,
   },
-
-  // Comparison
-  comparisonCard: {
-    backgroundColor: theme.colors.white,
-    borderRadius: 20,
-    overflow: 'hidden',
-    ...theme.shadows.sm,
-  },
-  comparisonRow: {
+  totalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
+    gap: 6,
   },
-  comparisonRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+  totalText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: '600',
   },
-  checkCircle: {
+  totalAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  originalAmount: {
+    fontSize: 13,
+    color: '#999',
+    textDecorationLine: 'line-through',
+  },
+  planRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 70,
+  },
+  saveBadge: {
+    backgroundColor: '#FCE4EC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  saveBadgeText: {
+    color: '#FF3366',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  radioOutline: {
     width: 24,
     height: 24,
     borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+  },
+  expandedContent: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 20,
+  },
+  featuresList: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  featureListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  checkCircleFill: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FF3366',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
-  checkIncluded: {
-    backgroundColor: 'rgba(67,160,71,0.12)',
+  featureListText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: '500',
   },
-  checkExcluded: {
-    backgroundColor: 'rgba(229,57,53,0.10)',
+  choosePlanBtn: {
+    backgroundColor: '#FF3366',
+    borderRadius: 16,
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  crossText: {
-    fontSize: 11,
-    color: theme.colors.error,
+  choosePlanBtnText: {
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '700',
   },
-  comparisonLabel: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 14,
-    color: theme.colors.text,
-    flex: 1,
-    lineHeight: 20,
-  },
-  comparisonLabelMuted: {
-    color: theme.colors.textSecondary,
-  },
-  proBadgeSmall: {
+
+  featuresGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(255,215,0,0.15)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.35)',
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    marginBottom: 32,
+    gap: 16,
+    justifyContent: 'space-between',
   },
-  proBadgeSmallText: {
-    fontFamily: theme.fonts.extraBold,
-    fontSize: 9,
-    color: '#B8860B',
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  gridItem: {
+    width: (width - 40 - 48) / 4, // 4 items per row, gaps included
+    alignItems: 'center',
+  },
+  gridIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FCE4EC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  gridItemLabel: {
+    fontSize: 11,
+    color: '#1A1A1A',
+    textAlign: 'center',
+    lineHeight: 14,
+    fontWeight: '500',
   },
 
-  // Security
-  securityNote: {
+  whyList: {
+    paddingHorizontal: 24,
+    gap: 16,
+    marginBottom: 40,
+  },
+  whyListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  whyListText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: '500',
+  },
+
+  testimonialCard: {
+    backgroundColor: '#FFF',
+    marginHorizontal: 20,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  quoteIconWrap: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  testimonialText: {
+    fontSize: 15,
+    color: '#1A1A1A',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  testimonialUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  testimonialAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  testimonialName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  testimonialRole: {
+    fontSize: 13,
+    color: '#666',
+  },
+
+  securitySection: {
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  secureHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  secureTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  secureDesc: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 24,
+  },
+  weAcceptLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  weAcceptText: {
+    marginHorizontal: 12,
+    fontSize: 12,
+    color: '#666',
+  },
+  paymentLogosContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
-    marginTop: 28,
-    marginHorizontal: 24,
+    gap: 16,
+    marginBottom: 24,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    width: '100%',
+    flexWrap: 'wrap',
   },
-  securityText: {
-    fontFamily: theme.fonts.regular,
+  paymentLogoText: {
     fontSize: 12,
-    color: theme.colors.textMuted,
-    flex: 1,
-    lineHeight: 18,
+  },
+  mastercardCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    opacity: 0.8,
+  },
+  footerDisclaimer: {
+    fontSize: 11,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });

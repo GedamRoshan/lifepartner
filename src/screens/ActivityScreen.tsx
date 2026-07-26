@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,29 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Animated,
   Platform,
   SafeAreaView,
+  Animated,
+  RefreshControl,
 } from 'react-native';
-import { CheckCircle, XCircle, Clock, Heart, X } from 'lucide-react-native';
-import { theme } from '../theme';
+import { Check, X, Clock, Heart, MoreVertical, MapPin, Bell, Crown, ChevronRight, ChevronDown } from 'lucide-react-native';
+import Reanimated, { FadeInUp, FadeInDown, Layout, BounceIn, useSharedValue, useAnimatedStyle, withTiming, withSpring, withDelay, interpolateColor } from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native';
 
-type ActivityStatus = 'accepted' | 'rejected' | 'pending';
+const COLORS = {
+  primary: '#FF2D55',
+  accepted: '#22C55E',
+  declined: '#FF2D55',
+  pending: '#8B5CF6',
+  surface: '#F7F2FF',
+  white: '#FFFFFF',
+  text: '#0F172A',
+  textSecondary: '#64748B',
+  border: '#E2E8F0',
+  pinkGradient: ['#FF2D55', '#FF6B8B'],
+};
+
+type ActivityStatus = 'accepted' | 'declined' | 'pending';
 
 interface ActivityItem {
   id: string;
@@ -61,118 +76,133 @@ const MOCK_ACTIVITIES: ActivityItem[] = [
     location: 'Delhi, India',
     image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
     isVerified: false,
-    status: 'rejected',
+    status: 'declined',
     timeAgo: '1 day ago',
   },
   {
     id: '4',
-    name: 'Zara Khan',
+    name: 'Neha Singh',
     age: 25,
-    profession: 'Graphic Designer',
-    location: 'Bangalore, Karnataka',
+    profession: 'Marketing Manager',
+    location: 'Bengaluru, Karnataka',
     image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400',
-    isVerified: true,
-    status: 'rejected',
-    timeAgo: '2 days ago',
-  },
-  {
-    id: '5',
-    name: 'Arjun Mehta',
-    age: 30,
-    profession: 'Entrepreneur',
-    location: 'Pune, Maharashtra',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    isVerified: true,
-    status: 'pending',
-    timeAgo: '3 hrs ago',
-  },
-  {
-    id: '6',
-    name: 'Kavya Nair',
-    age: 23,
-    profession: 'Teacher',
-    location: 'Kochi, Kerala',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
     isVerified: false,
     status: 'pending',
-    timeAgo: '6 hrs ago',
+    timeAgo: '2 days ago',
   },
 ];
 
-type TabKey = 'all' | 'accepted' | 'rejected' | 'pending';
-
+type TabKey = 'all' | 'accepted' | 'declined' | 'pending';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'accepted', label: 'Accepted' },
-  { key: 'rejected', label: 'Declined' },
+  { key: 'declined', label: 'Declined' },
   { key: 'pending', label: 'Pending' },
 ];
 
 const StatusBadge = ({ status }: { status: ActivityStatus }) => {
   const config = {
-    accepted: {
-      bg: 'rgba(67, 160, 71, 0.12)',
-      color: '#43A047',
-      label: 'Accepted',
-      Icon: CheckCircle,
-    },
-    rejected: {
-      bg: 'rgba(229, 57, 53, 0.12)',
-      color: '#E53935',
-      label: 'Declined',
-      Icon: XCircle,
-    },
-    pending: {
-      bg: 'rgba(156, 39, 176, 0.12)',
-      color: '#9C27B0',
-      label: 'Pending',
-      Icon: Clock,
-    },
+    accepted: { bg: '#F0FDF4', color: COLORS.accepted, label: 'Accepted', Icon: Check },
+    declined: { bg: '#FEF2F2', color: COLORS.declined, label: 'Declined', Icon: X },
+    pending: { bg: '#FAF5FF', color: COLORS.pending, label: 'Pending', Icon: Clock },
   }[status];
 
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
-      <config.Icon size={12} color={config.color} />
+      <config.Icon size={12} color={config.color} strokeWidth={3} />
       <Text style={[styles.badgeText, { color: config.color }]}>{config.label}</Text>
     </View>
   );
 };
 
-const ActivityCard = ({ item }: { item: ActivityItem }) => {
-  const borderColor =
-    item.status === 'accepted'
-      ? '#43A047'
-      : item.status === 'rejected'
-      ? '#E53935'
-      : '#9C27B0';
+const ActivityCard = ({ item, index }: { item: ActivityItem; index: number }) => {
+  const navigation = useNavigation();
+  const statusColor = COLORS[item.status];
 
   return (
-    <View style={[styles.card, { borderLeftColor: borderColor }]}>
-      <Image source={{ uri: item.image }} style={styles.avatar} />
-      <View style={styles.cardBody}>
-        <View style={styles.cardHeader}>
-          <View style={styles.nameRow}>
-            <Text style={styles.name}>{item.name}</Text>
-            {item.isVerified && (
-              <View style={styles.verifiedDot}>
-                <Text style={styles.verifiedTick}>✓</Text>
-              </View>
-            )}
+    <Reanimated.View 
+      entering={FadeInDown.delay(index * 80).springify().damping(16).mass(0.8).stiffness(150)}
+      layout={Layout.springify().damping(16)}
+      style={styles.cardWrapper}
+    >
+      {/* Colored Left Border Strip */}
+      <View style={[styles.cardBorderLeft, { backgroundColor: statusColor }]} />
+      
+      <TouchableOpacity 
+        style={styles.cardContent} 
+        activeOpacity={0.7}
+        onPress={() => {
+          // @ts-ignore
+          navigation.navigate('ChatConversation', { chatName: item.name, avatar: item.image });
+        }}
+      >
+        <Image source={{ uri: item.image }} style={styles.avatar} />
+        
+        <View style={styles.cardBody}>
+          <View style={styles.cardHeader}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{item.name}</Text>
+              {item.isVerified && (
+                <View style={styles.verifiedDot}>
+                  <Check size={10} color="#FFF" strokeWidth={4} />
+                </View>
+              )}
+            </View>
+            <StatusBadge status={item.status} />
           </View>
-          <StatusBadge status={item.status} />
+          
+          <View style={styles.moreIconWrap}>
+            <MoreVertical size={18} color={COLORS.textSecondary} />
+          </View>
+
+          <Text style={styles.subInfo}>
+            {item.age} • {item.profession}
+          </Text>
+          
+          <View style={styles.locationRow}>
+            <MapPin size={12} color={COLORS.primary} strokeWidth={3} />
+            <Text style={styles.location}>{item.location}</Text>
+          </View>
+          
+          {item.message && (
+            <View style={styles.messageBox}>
+              <Text style={styles.messageText}>{item.message}</Text>
+            </View>
+          )}
+          
+          <Text style={styles.timeAgo}>{item.timeAgo}</Text>
         </View>
-        <Text style={styles.subInfo}>
-          {item.age} • {item.profession}
-        </Text>
-        <Text style={styles.location}>📍 {item.location}</Text>
-        {item.message ? (
-          <View style={styles.messageBox}>
-            <Text style={styles.messageText}>{item.message}</Text>
-          </View>
-        ) : null}
-        <Text style={styles.timeAgo}>{item.timeAgo}</Text>
-      </View>
-    </View>
+      </TouchableOpacity>
+    </Reanimated.View>
+  );
+};
+
+const AnimatedTab = ({ isActive, label, onPress }: { isActive: boolean; label: string; onPress: () => void }) => {
+  return (
+    <TouchableOpacity 
+      activeOpacity={0.8} 
+      onPress={onPress} 
+      style={[
+        styles.tab, 
+        isActive ? styles.tabActive : styles.tabInactive
+      ]}
+    >
+      <Text style={[styles.tabText, isActive ? styles.tabTextActive : styles.tabTextInactive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const AnimatedCounter = ({ count, color }: { count: number, color: string }) => {
+  // Simple component to show the bounce in for the count
+  return (
+    <Reanimated.Text 
+      entering={BounceIn.delay(300)}
+      style={[styles.statNumber, { color }]}
+    >
+      {count}
+    </Reanimated.Text>
   );
 };
 
@@ -185,79 +215,130 @@ export const ActivityScreen = () => {
       : MOCK_ACTIVITIES.filter(a => a.status === activeTab);
 
   const acceptedCount = MOCK_ACTIVITIES.filter(a => a.status === 'accepted').length;
-  const rejectedCount = MOCK_ACTIVITIES.filter(a => a.status === 'rejected').length;
+  const declinedCount = MOCK_ACTIVITIES.filter(a => a.status === 'declined').length;
   const pendingCount = MOCK_ACTIVITIES.filter(a => a.status === 'pending').length;
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <Reanimated.View 
+        entering={FadeInUp.duration(600).springify()} 
+        style={styles.container}
+      >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Activity</Text>
-          <Text style={styles.headerSubtitle}>Track your connection requests</Text>
+          <View>
+            <Text style={styles.headerTitle}>Activity</Text>
+            <Text style={styles.headerSubtitle}>Track your connection requests</Text>
+          </View>
+          <TouchableOpacity style={styles.bellBtn} activeOpacity={0.8}>
+            <Bell size={24} color={COLORS.text} />
+            <View style={styles.notificationDot}>
+              <Text style={styles.notificationText}>3</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { borderTopColor: '#43A047' }]}>
-            <Heart size={18} color="#43A047" />
-            <Text style={[styles.statNumber, { color: '#43A047' }]}>{acceptedCount}</Text>
-            <Text style={styles.statLabel}>Accepted</Text>
+          {/* Accepted Card */}
+          <View style={styles.statCardWrap}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconBox, { backgroundColor: '#F0FDF4' }]}>
+                <Heart size={20} color={COLORS.accepted} />
+              </View>
+              <AnimatedCounter count={acceptedCount} color={COLORS.accepted} />
+              <Text style={styles.statLabel}>Accepted</Text>
+            </View>
           </View>
-          <View style={[styles.statCard, { borderTopColor: '#E53935' }]}>
-            <X size={18} color="#E53935" />
-            <Text style={[styles.statNumber, { color: '#E53935' }]}>{rejectedCount}</Text>
-            <Text style={styles.statLabel}>Declined</Text>
+          
+          {/* Declined Card */}
+          <View style={styles.statCardWrap}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconBox, { backgroundColor: '#FEF2F2' }]}>
+                <X size={20} color={COLORS.declined} strokeWidth={2.5} />
+              </View>
+              <AnimatedCounter count={declinedCount} color={COLORS.declined} />
+              <Text style={styles.statLabel}>Declined</Text>
+            </View>
           </View>
-          <View style={[styles.statCard, { borderTopColor: '#9C27B0' }]}>
-            <Clock size={18} color="#9C27B0" />
-            <Text style={[styles.statNumber, { color: '#9C27B0' }]}>{pendingCount}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
+          
+          {/* Pending Card */}
+          <View style={styles.statCardWrap}>
+            <View style={styles.statCard}>
+              <View style={[styles.statIconBox, { backgroundColor: '#FAF5FF' }]}>
+                <Clock size={20} color={COLORS.pending} />
+              </View>
+              <AnimatedCounter count={pendingCount} color={COLORS.pending} />
+              <Text style={styles.statLabel}>Pending</Text>
+            </View>
           </View>
         </View>
 
         {/* Tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabsScroll}
-          contentContainerStyle={styles.tabsContent}
-        >
+        <View style={styles.tabsContainer}>
           {TABS.map(tab => {
             const isActive = activeTab === tab.key;
             return (
-              <TouchableOpacity
+              <AnimatedTab
                 key={tab.key}
-                activeOpacity={0.8}
-                style={[styles.tab, isActive && styles.tabActive]}
+                isActive={isActive}
+                label={tab.label}
                 onPress={() => setActiveTab(tab.key)}
-              >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
+              />
             );
           })}
-        </ScrollView>
+        </View>
+
+        {/* Premium Banner */}
+        <TouchableOpacity style={styles.premiumBanner} activeOpacity={0.9}>
+          <View style={styles.premiumIconWrap}>
+            <Crown size={22} color={COLORS.white} strokeWidth={2.5} />
+          </View>
+          <View style={styles.premiumTextWrap}>
+            <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
+            <Text style={styles.premiumSub}>Unlock exclusive features and connect without limits.</Text>
+          </View>
+          <ChevronRight size={20} color={COLORS.primary} />
+        </TouchableOpacity>
+
+        {/* Section Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Requests</Text>
+          <Text style={styles.sectionSubTitle}>Today <ChevronDown size={14} color={COLORS.textSecondary} /></Text>
+        </View>
 
         {/* List */}
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.primary}
+              colors={[COLORS.primary]}
+            />
+          }
         >
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>🔍</Text>
               <Text style={styles.emptyTitle}>No activity yet</Text>
-              <Text style={styles.emptyDesc}>
-                Start sending connection requests to see activity here.
-              </Text>
             </View>
           ) : (
-            filtered.map(item => <ActivityCard key={item.id} item={item} />)
+            filtered.map((item, index) => <ActivityCard key={item.id} item={item} index={index} />)
           )}
         </ScrollView>
-      </View>
+      </Reanimated.View>
     </SafeAreaView>
   );
 };
@@ -265,177 +346,307 @@ export const ActivityScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundSoft,
+    backgroundColor: '#FFFBFD', // very light pinkish white bg matching the design
   },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundSoft,
   },
   header: {
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 24,
     paddingTop: Platform.OS === 'android' ? 16 : 8,
-    paddingBottom: 12,
-    backgroundColor: theme.colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingBottom: 20,
   },
   headerTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 26,
-    color: theme.colors.text,
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
     letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    marginTop: 2,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+  },
+  bellBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    backgroundColor: COLORS.primary,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.white,
+  },
+  notificationText: {
+    color: COLORS.white,
+    fontSize: 9,
+    fontWeight: '800',
   },
   statsRow: {
     flexDirection: 'row',
-    margin: 16,
-    gap: 10,
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 24,
+  },
+  statCardWrap: {
+    flex: 1,
+    borderRadius: 16,
+    backgroundColor: COLORS.white,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  statCardBorderTop: {
+    height: 4,
+    width: '100%',
   },
   statCard: {
-    flex: 1,
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.lg,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
-    borderTopWidth: 3,
-    ...theme.shadows.sm,
+  },
+  statIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   statNumber: {
-    fontFamily: theme.fonts.bold,
     fontSize: 22,
-    marginTop: 4,
+    fontWeight: '700',
+    lineHeight: 26,
   },
   statLabel: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    marginTop: 1,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
-  tabsScroll: {
-    maxHeight: 48,
-    marginBottom: 4,
-  },
-  tabsContent: {
-    paddingHorizontal: 16,
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
     gap: 8,
-    alignItems: 'center',
+    marginBottom: 16,
   },
   tab: {
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.surface,
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: COLORS.primary,
+    elevation: 3,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  tabInactive: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   tabText: {
-    fontFamily: theme.fonts.medium,
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
   tabTextActive: {
-    color: theme.colors.white,
+    color: COLORS.white,
+    fontWeight: '700',
+  },
+  tabTextInactive: {
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  premiumBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F5',
+    marginHorizontal: 24,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#FFE4EE',
+  },
+  premiumIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  premiumTextWrap: {
+    flex: 1,
+  },
+  premiumTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: 2,
+  },
+  premiumSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  sectionSubTitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 32,
-    gap: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    gap: 16,
   },
-  card: {
+  cardWrapper: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.lg,
-    padding: 14,
-    borderLeftWidth: 4,
-    ...theme.shadows.sm,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#1A0010', // Tinted dark shadow for depth
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  cardBorderLeft: {
+    width: 6,
+    height: '100%',
+  },
+  cardContent: {
+    flex: 1,
+    flexDirection: 'row',
+    padding: 16,
   },
   avatar: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: theme.colors.surface,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.border,
   },
   cardBody: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 16,
+    position: 'relative',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 2,
+    marginBottom: 4,
+    paddingRight: 24, // space for more icon
+  },
+  moreIconWrap: {
+    position: 'absolute',
+    right: 0,
+    top: 20,
+    padding: 4,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   name: {
-    fontFamily: theme.fonts.semiBold,
-    fontSize: 15,
-    color: theme.colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
   },
   verifiedDot: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: COLORS.pending, // Purple badge
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  verifiedTick: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '800',
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 16,
   },
   badgeText: {
-    fontFamily: theme.fonts.medium,
     fontSize: 11,
+    fontWeight: '600',
   },
   subInfo: {
-    fontFamily: theme.fonts.regular,
     fontSize: 13,
-    color: theme.colors.textSecondary,
-    marginBottom: 2,
+    color: COLORS.textSecondary,
+    marginBottom: 6,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 12,
   },
   location: {
-    fontFamily: theme.fonts.regular,
     fontSize: 12,
-    color: theme.colors.textMuted,
-    marginBottom: 6,
+    color: COLORS.textSecondary,
   },
   messageBox: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginBottom: 6,
+    backgroundColor: COLORS.surface, // light purple
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    marginRight: 10,
   },
   messageText: {
-    fontFamily: theme.fonts.regular,
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#4B5563', // dark greyish
     fontStyle: 'italic',
   },
   timeAgo: {
-    fontFamily: theme.fonts.regular,
     fontSize: 11,
-    color: theme.colors.textMuted,
+    color: '#94A3B8',
   },
   emptyState: {
     alignItems: 'center',
@@ -443,19 +654,11 @@ const styles = StyleSheet.create({
   },
   emptyEmoji: {
     fontSize: 48,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   emptyTitle: {
-    fontFamily: theme.fonts.semiBold,
     fontSize: 18,
-    color: theme.colors.text,
-    marginBottom: 6,
-  },
-  emptyDesc: {
-    fontFamily: theme.fonts.regular,
-    fontSize: 14,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    paddingHorizontal: 32,
+    fontWeight: '600',
+    color: COLORS.text,
   },
 });

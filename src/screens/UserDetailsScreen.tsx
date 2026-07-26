@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { MapPin, Briefcase, BadgeCheck, Sparkles, ChevronLeft } from 'lucide-react-native';
+import { MapPin, Briefcase, BadgeCheck, Sparkles, ChevronLeft, X, Heart, MessageCircle, Check } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
@@ -12,6 +12,8 @@ export const UserDetailsScreen = () => {
   // @ts-ignore
   const { profile } = route.params || {};
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isInterested, setIsInterested] = useState(false);
+  const [isIgnored, setIsIgnored] = useState(false);
 
   if (!profile) return null;
 
@@ -29,109 +31,163 @@ export const UserDetailsScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container} bounces={false} showsVerticalScrollIndicator={false}>
-      <View style={styles.imageContainer}>
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-          bounces={false}
-          style={styles.imageScroll}
-        >
-          {images.map((img: string, idx: number) => (
-            <Image key={idx} source={{ uri: img }} style={styles.image} />
-          ))}
-        </ScrollView>
-        
-        <View style={styles.paginationContainer}>
-          {images.map((_: any, idx: number) => (
-            <View
-              key={idx}
-              style={[
-                styles.dot,
-                currentImageIndex === idx ? styles.activeDot : styles.inactiveDot
-              ]}
-            />
-          ))}
+    <View style={styles.mainWrapper}>
+      <ScrollView 
+        style={styles.container} 
+        bounces={false} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 110 }}
+      >
+        <View style={styles.imageContainer}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+            bounces={false}
+            style={styles.imageScroll}
+          >
+            {images.map((img: string, idx: number) => (
+              <Image key={idx} source={{ uri: img }} style={styles.image} />
+            ))}
+          </ScrollView>
+          
+          <View style={styles.paginationContainer}>
+            {images.map((_: any, idx: number) => (
+              <View
+                key={idx}
+                style={[
+                  styles.dot,
+                  currentImageIndex === idx ? styles.activeDot : styles.inactiveDot
+                ]}
+              />
+            ))}
+          </View>
+
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
+            <ChevronLeft size={28} color="#FFFFFF" strokeWidth={2.5} />
+          </TouchableOpacity>
+          
+          <View style={styles.topBadges}>
+            {profile.isVerified ? (
+              <View style={styles.verifiedBadge}>
+                <BadgeCheck size={14} color="#FFFFFF" />
+                <Text style={styles.verifiedText}>Verified</Text>
+              </View>
+            ) : (
+              <View />
+            )}
+            {profile.distance != null && (
+              <View style={styles.distanceBadge}>
+                <MapPin size={12} color="#FFFFFF" />
+                <Text style={styles.distanceText}>{profile.distance} km away</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.gradientOverlay}>
+            <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+              <Defs>
+                <LinearGradient id="grad2" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#000000" stopOpacity="0" />
+                  <Stop offset="0.4" stopColor="#000000" stopOpacity="0.4" />
+                  <Stop offset="1" stopColor="#000000" stopOpacity="0.8" />
+                </LinearGradient>
+              </Defs>
+              <Rect width="100%" height="100%" fill="url(#grad2)" />
+            </Svg>
+          </View>
         </View>
 
+        <View style={styles.contentContainer}>
+          <View style={styles.headerRow}>
+            <Text style={styles.name}>
+              {profile.name}, {profile.age}
+            </Text>
+            {profile.isVerified && (
+              <BadgeCheck size={24} color="#2196F3" fill="#FFFFFF" style={{ marginLeft: 6, marginTop: 4 }} />
+            )}
+          </View>
+
+          <View style={styles.infoSection}>
+            <View style={styles.infoRow}>
+              <Briefcase size={20} color="#FF2D55" />
+              <Text style={styles.infoText}>{profile.profession}</Text>
+            </View>
+            
+            <View style={styles.infoRow}>
+              <MapPin size={20} color="#FF2D55" />
+              <Text style={styles.infoText}>{profile.location}</Text>
+            </View>
+            
+            <View style={styles.infoRow}>
+              <Sparkles size={20} color="#FF2D55" />
+              <Text style={styles.infoText}>{profile.religion}</Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>About Me</Text>
+            <Text style={styles.bioText}>{profile.bio}</Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Floating Action Bar */}
+      <View style={styles.actionBar}>
+        {/* Ignore Button */}
         <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()}
+          style={[styles.actionIconBtn, styles.ignoreBtn, isIgnored && styles.ignoredBtnActive]} 
           activeOpacity={0.8}
+          onPress={() => setIsIgnored(!isIgnored)}
         >
-          <ChevronLeft size={28} color="#FFFFFF" strokeWidth={2.5} />
+          <X size={24} color={isIgnored ? '#FFFFFF' : '#64748B'} strokeWidth={2.5} />
         </TouchableOpacity>
-        
-        <View style={styles.topBadges}>
-          {profile.isVerified ? (
-            <View style={styles.verifiedBadge}>
-              <BadgeCheck size={14} color="#FFFFFF" />
-              <Text style={styles.verifiedText}>Verified</Text>
-            </View>
+
+        {/* Interested / Send Interest Button */}
+        <TouchableOpacity 
+          style={[styles.interestBtn, isInterested && styles.interestBtnSent]} 
+          activeOpacity={0.85}
+          onPress={() => setIsInterested(!isInterested)}
+        >
+          {isInterested ? (
+            <>
+              <Check size={20} color="#FFFFFF" strokeWidth={3} />
+              <Text style={styles.interestBtnText}>Interested Sent</Text>
+            </>
           ) : (
-            <View />
+            <>
+              <Heart size={20} color="#FFFFFF" fill="#FFFFFF" />
+              <Text style={styles.interestBtnText}>Send Interest</Text>
+            </>
           )}
-          {profile.distance != null && (
-            <View style={styles.distanceBadge}>
-              <MapPin size={12} color="#FFFFFF" />
-              <Text style={styles.distanceText}>{profile.distance} km away</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.gradientOverlay}>
-          <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
-            <Defs>
-              <LinearGradient id="grad2" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#000000" stopOpacity="0" />
-                <Stop offset="0.4" stopColor="#000000" stopOpacity="0.4" />
-                <Stop offset="1" stopColor="#000000" stopOpacity="0.8" />
-              </LinearGradient>
-            </Defs>
-            <Rect width="100%" height="100%" fill="url(#grad2)" />
-          </Svg>
-        </View>
+        </TouchableOpacity>
+
+        {/* Chat Button */}
+        <TouchableOpacity 
+          style={[styles.actionIconBtn, styles.chatBtn]} 
+          activeOpacity={0.8}
+          onPress={() => {
+            // @ts-ignore
+            navigation.navigate('ChatConversation', { chatName: profile.name, avatar: profile.image });
+          }}
+        >
+          <MessageCircle size={24} color="#8B5CF6" strokeWidth={2.5} />
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.contentContainer}>
-        <View style={styles.headerRow}>
-          <Text style={styles.name}>
-            {profile.name}, {profile.age}
-          </Text>
-          {profile.isVerified && (
-            <BadgeCheck size={24} color="#2196F3" fill="#FFFFFF" style={{ marginLeft: 6, marginTop: 4 }} />
-          )}
-        </View>
-
-        <View style={styles.infoSection}>
-          <View style={styles.infoRow}>
-            <Briefcase size={20} color="#FF2D55" />
-            <Text style={styles.infoText}>{profile.profession}</Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <MapPin size={20} color="#FF2D55" />
-            <Text style={styles.infoText}>{profile.location}</Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <Sparkles size={20} color="#FF2D55" />
-            <Text style={styles.infoText}>{profile.religion}</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About Me</Text>
-          <Text style={styles.bioText}>{profile.bio}</Text>
-        </View>
-      </View>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  mainWrapper: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FAFAFA',
@@ -277,5 +333,64 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666666',
     lineHeight: 24,
+  },
+  actionBar: {
+    position: 'absolute',
+    bottom: 24,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 36,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    gap: 12,
+  },
+  actionIconBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ignoreBtn: {
+    backgroundColor: '#F1F5F9',
+  },
+  ignoredBtnActive: {
+    backgroundColor: '#EF4444',
+  },
+  chatBtn: {
+    backgroundColor: '#F3E8FF',
+  },
+  interestBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FF2D55',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#FF2D55',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  interestBtnSent: {
+    backgroundColor: '#22C55E',
+    shadowColor: '#22C55E',
+  },
+  interestBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
