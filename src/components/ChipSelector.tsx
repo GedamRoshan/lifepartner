@@ -11,7 +11,7 @@ import {
 import { theme } from '../theme';
 
 export interface ChipSelectorOption {
-  label: string;
+  label: string
   value: string;
 }
 

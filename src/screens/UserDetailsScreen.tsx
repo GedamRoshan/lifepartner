@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { MapPin, Briefcase, BadgeCheck, Sparkles, ChevronLeft, X, Heart, MessageCircle, Check, User } from 'lucide-react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
+import { MapPin, Briefcase, BadgeCheck, Sparkles, ChevronLeft, X, Heart, MessageCircle, Check, User, CheckCircle2 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { theme } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,8 +15,26 @@ export const UserDetailsScreen = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isInterested, setIsInterested] = useState(false);
   const [isIgnored, setIsIgnored] = useState(false);
+  const [loadingInterest, setLoadingInterest] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   if (!profile) return null;
+
+  const handleSendInterest = () => {
+    if (isInterested) {
+      setIsInterested(false);
+      return;
+    }
+    setLoadingInterest(true);
+    setTimeout(() => {
+      setLoadingInterest(false);
+      setIsInterested(true);
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3500);
+    }, 1000);
+  };
 
   // Mocking multiple images for demonstration if they don't exist
   const images = profile.images || [
@@ -32,6 +51,12 @@ export const UserDetailsScreen = () => {
 
   return (
     <View style={styles.mainWrapper}>
+      {showSuccessToast && (
+        <View style={styles.toastBanner}>
+          <CheckCircle2 size={20} color="#FFFFFF" />
+          <Text style={styles.toastText}>Interest Sent Successfully to {profile.name}! 💕</Text>
+        </View>
+      )}
       <ScrollView 
         style={styles.container} 
         bounces={false} 
@@ -81,12 +106,6 @@ export const UserDetailsScreen = () => {
               </View>
             ) : (
               <View />
-            )}
-            {profile.distance != null && (
-              <View style={styles.distanceBadge}>
-                <MapPin size={12} color="#FFFFFF" />
-                <Text style={styles.distanceText}>{profile.distance} km away</Text>
-              </View>
             )}
           </View>
           <View style={styles.gradientOverlay}>
@@ -155,14 +174,20 @@ export const UserDetailsScreen = () => {
 
         {/* Interested / Send Interest Button */}
         <TouchableOpacity 
-          style={[styles.interestBtn, isInterested && styles.interestBtnSent]} 
+          style={[styles.interestBtn, isInterested && styles.interestBtnSent, loadingInterest && styles.interestBtnLoading]} 
           activeOpacity={0.85}
-          onPress={() => setIsInterested(!isInterested)}
+          onPress={handleSendInterest}
+          disabled={loadingInterest}
         >
-          {isInterested ? (
+          {loadingInterest ? (
+            <>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={styles.interestBtnText}>Sending Interest...</Text>
+            </>
+          ) : isInterested ? (
             <>
               <Check size={20} color="#FFFFFF" strokeWidth={3} />
-              <Text style={styles.interestBtnText}>Interested Sent</Text>
+              <Text style={styles.interestBtnText}>Interest Sent</Text>
             </>
           ) : (
             <>
@@ -393,9 +418,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#22C55E',
     shadowColor: '#22C55E',
   },
+  interestBtnLoading: {
+    opacity: 0.85,
+  },
   interestBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  toastBanner: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    backgroundColor: '#10B981',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  toastText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    flex: 1,
   },
 });

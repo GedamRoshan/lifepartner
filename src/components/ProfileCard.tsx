@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { MapPin, Briefcase, BadgeCheck, Sparkles, X, Send, MessageCircle, User, ShieldCheck } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { MapPin, Briefcase, BadgeCheck, Sparkles, X, Send, MessageCircle, User, ShieldCheck, Check, CheckCircle2 } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { useNavigation } from '@react-navigation/native';
 
@@ -30,6 +30,28 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
   const createdByText = profile.createdFor || profile.profileFor || 'Self';
   const isAadhaar = profile.isAadhaarVerified ?? profile.isVerified ?? true;
 
+  const [isSendingInterest, setIsSendingInterest] = useState(false);
+  const [isInterestSent, setIsInterestSent] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
+  const handleSendInterest = () => {
+    if (isSendingInterest) return;
+    if (isInterestSent) {
+      setIsInterestSent(false);
+      return;
+    }
+    setIsSendingInterest(true);
+    setTimeout(() => {
+      setIsSendingInterest(false);
+      setIsInterestSent(true);
+      setShowToast(true);
+      onAction?.('like');
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3500);
+    }, 900);
+  };
+
   return (
     <TouchableOpacity 
       style={styles.card} 
@@ -37,6 +59,13 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
       onPress={onPressProfile}
     >
       <Image source={{ uri: profile.image }} style={styles.image} />
+
+      {showToast && (
+        <View style={styles.cardToast}>
+          <CheckCircle2 size={16} color="#FFFFFF" />
+          <Text style={styles.cardToastText}>Interest Sent Successfully to {profile.name}! 💕</Text>
+        </View>
+      )}
 
       <View style={styles.topBadges}>
         <View style={styles.leftBadgesContainer}>
@@ -58,12 +87,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
             <User size={12} color="#FFFFFF" />
             <Text style={styles.createdForText}>Profile by {createdByText}</Text>
           </View>
-          {profile.distance != null && (
-            <View style={styles.distanceBadge}>
-              <MapPin size={12} color="#FFFFFF" />
-              <Text style={styles.distanceText}>{profile.distance} km away</Text>
-            </View>
-          )}
         </View>
       </View>
 
@@ -123,13 +146,32 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onAction, onP
           </View>
           
           <View style={styles.actionItem}>
-            <TouchableOpacity style={styles.actionButtonLarge} onPress={() => onAction?.('like')} activeOpacity={0.85}>
-              <Send size={28} color="#FF2D55" strokeWidth={2.5} style={{ marginLeft: -2, marginTop: 2 }} />
-              <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>1</Text>
-              </View>
+            <TouchableOpacity 
+              style={[styles.actionButtonLarge, isInterestSent && styles.actionButtonSent]} 
+              onPress={handleSendInterest} 
+              activeOpacity={0.85}
+              disabled={isSendingInterest}
+            >
+              {isSendingInterest ? (
+                <ActivityIndicator size="small" color="#FF2D55" />
+              ) : isInterestSent ? (
+                <Check size={28} color="#FFFFFF" strokeWidth={3} />
+              ) : (
+                <>
+                  <Send size={28} color="#FF2D55" strokeWidth={2.5} style={{ marginLeft: -2, marginTop: 2 }} />
+                  <View style={styles.badgeContainer}>
+                    <Text style={styles.badgeText}>1</Text>
+                  </View>
+                </>
+              )}
             </TouchableOpacity>
-            <Text style={styles.actionLabelPrimary}>Interest Sent</Text>
+            <Text 
+              style={[styles.actionLabelPrimary, isInterestSent && styles.actionLabelSent]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {isSendingInterest ? 'Sending...' : isInterestSent ? 'Interest Sent' : 'Send Interest'}
+            </Text>
           </View>
 
           <View style={styles.actionItem}>
@@ -304,14 +346,16 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
     width: '100%',
     marginTop: 'auto',
+    paddingHorizontal: 8,
   },
   actionItem: {
     alignItems: 'center',
-    width: 80,
+    flex: 1,
+    paddingHorizontal: 2,
   },
   actionButtonMedium: {
     width: 60,
@@ -325,7 +369,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 4,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   actionButtonLarge: {
     width: 72,
@@ -339,7 +383,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 14,
     elevation: 6,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   badgeContainer: {
     position: 'absolute',
@@ -363,5 +407,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFFFFF',
     fontWeight: '600',
+    textAlign: 'center',
+    width: '100%',
+  },
+  actionButtonSent: {
+    backgroundColor: '#22C55E',
+    shadowColor: '#22C55E',
+  },
+  actionLabelSent: {
+    color: '#4ADE80',
+    fontWeight: '800',
+  },
+  cardToast: {
+    position: 'absolute',
+    top: 60,
+    left: 16,
+    right: 16,
+    backgroundColor: '#10B981',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cardToastText: {
+    fontFamily: 'System',
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    flex: 1,
   },
 });

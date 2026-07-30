@@ -10,8 +10,10 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
-import { Filter, Shield, ChevronUp } from 'lucide-react-native';
+import { Filter, Shield, ChevronUp, Sparkles } from 'lucide-react-native';
 import { ProfileCard } from '../components/ProfileCard';
+import { AiMatchModal } from '../components/AiMatchModal';
+import { theme } from '../theme';
 import { MOCK_PROFILES } from '../utils/mockData';
 import { useAppDispatch } from '../store/hooks';
 import { likeProfile, dislikeProfile } from '../store/slices/profileSlice';
@@ -26,6 +28,7 @@ export const DiscoverScreen = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasSwiped, setHasSwiped] = useState(false);
+  const [isAiModalVisible, setIsAiModalVisible] = useState(false);
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const dispatch = useAppDispatch();
   const navigation = useNavigation<any>();
@@ -82,7 +85,9 @@ export const DiscoverScreen = () => {
     
     if (!hasSwiped) setHasSwiped(true);
     
-    if (currentIndex < profiles.length - 1) {
+    // Do NOT auto-scroll on 'like' (Interest Sent) so user can see Interest Sent state & toast.
+    // User will manually scroll up to the next profile.
+    if (type === 'dislike' && currentIndex < profiles.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
     }
   };
@@ -103,9 +108,19 @@ export const DiscoverScreen = () => {
           </Text>
           <Text style={styles.subGreeting}>Find meaningful connections 🌷</Text>
         </View>
-        <TouchableOpacity style={styles.filterButton} activeOpacity={0.8}>
-          <Filter size={20} color="#FF2D55" />
-        </TouchableOpacity>
+        <View style={styles.headerRightRow}>
+          <TouchableOpacity
+            style={styles.aiMatchButton}
+            activeOpacity={0.85}
+            onPress={() => setIsAiModalVisible(true)}
+          >
+            <Sparkles size={16} color="#FFFFFF" />
+            <Text style={styles.aiMatchButtonText}>AI Auto Match</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterButton} activeOpacity={0.8}>
+            <Filter size={20} color="#FF2D55" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.badgesRow}>
@@ -165,6 +180,14 @@ export const DiscoverScreen = () => {
           <Text style={styles.swipeUpText}>Swipe up to view more profiles</Text>
         </Animated.View>
       )}
+
+      <AiMatchModal
+        visible={isAiModalVisible}
+        onClose={() => setIsAiModalVisible(false)}
+        onConnect={(profile) => {
+          navigation.navigate('UserDetails', { profile });
+        }}
+      />
     </View>
   );
 };
@@ -195,6 +218,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     marginTop: 2,
+  },
+  headerRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  aiMatchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 22,
+    gap: 6,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  aiMatchButtonText: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   filterButton: {
     width: 44,
